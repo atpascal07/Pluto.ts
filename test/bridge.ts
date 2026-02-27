@@ -16,7 +16,7 @@ const bridge = new Bridge(3000,
 
 bridge.start();
 
-bridge.connectedClients.values().map(c => c.data);
+bridge.connectedHosts.values().map(c => c.data);
 
 bridge.on('CLUSTER_READY', (client) => {
     console.log(`Cluster ${client.clusterID} is ready with shards: ${client.shardList.join(', ')}`);
@@ -36,14 +36,14 @@ process.stdin.on('data', async function (text: Buffer) {
     const input = text.toString().trim().split(" ");
 
     if (input[0] == 'stop') {
-        bridge.stopInstance(bridge.connectedClients.values().next().value!).then((result) => {
+        bridge.stopInstance(bridge.connectedHosts.values().next().value!).then((result) => {
             console.log("Stopped instance:", result);
         });
     } else if (input[0] == 'move') {
         const instanceID = parseInt(input[1]);
         const clusterID = parseInt(input[2]);
 
-        const instance = bridge.connectedClients.values().find(c => c.instanceID === instanceID);
+        const instance = bridge.connectedHosts.values().find(c => c.instanceID === instanceID);
         const cluster = bridge.getClusters().find(c => c.clusterID === clusterID);
         bridge.moveCluster(instance!, cluster!).then((result) => {
             console.log("Moved cluster:", result);

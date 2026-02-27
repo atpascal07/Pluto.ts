@@ -1,6 +1,6 @@
-import {BridgeClientConnection} from "./BridgeClientConnection";
+import {BridgeHostConnection} from "./BridgeHostConnection";
 
-export enum BridgeClientClusterConnectionStatus {
+export enum BridgeClusterConnectionStatus {
     REQUESTING = 'requesting',
     STARTING = 'starting',
     CONNECTED = 'connected',
@@ -8,14 +8,14 @@ export enum BridgeClientClusterConnectionStatus {
     DISCONNECTED = 'disconnected',
 }
 
-export class BridgeClientCluster {
+export class BridgeClusterConnection {
     public readonly clusterID: number;
     public readonly shardList: number[];
-    public connectionStatus: BridgeClientClusterConnectionStatus = BridgeClientClusterConnectionStatus.DISCONNECTED;
+    public connectionStatus: BridgeClusterConnectionStatus = BridgeClusterConnectionStatus.DISCONNECTED;
 
-    public connection?: BridgeClientConnection;
+    public connection?: BridgeHostConnection;
 
-    public oldConnection?: BridgeClientConnection;
+    public oldConnection?: BridgeHostConnection;
 
     public missedHeartbeats: number = 0;
 
@@ -30,9 +30,9 @@ export class BridgeClientCluster {
         this.shardList = shardList;
     }
 
-    setConnection(connection?: BridgeClientConnection): void {
+    setConnection(connection?: BridgeHostConnection): void {
         if(connection == undefined){
-            this.connectionStatus = BridgeClientClusterConnectionStatus.DISCONNECTED;
+            this.connectionStatus = BridgeClusterConnectionStatus.DISCONNECTED;
             this.connection = undefined;
             return;
         }
@@ -41,20 +41,20 @@ export class BridgeClientCluster {
             throw new Error(`Connection already set for cluster ${this.clusterID}`);
         }
 
-        this.connectionStatus = BridgeClientClusterConnectionStatus.REQUESTING;
+        this.connectionStatus = BridgeClusterConnectionStatus.REQUESTING;
         this.connection = connection;
     }
 
-    setOldConnection(connection?: BridgeClientConnection): void {
+    setOldConnection(connection?: BridgeHostConnection): void {
         this.oldConnection = connection;
     }
 
     isUsed(): boolean {
-        return this.connection != undefined && this.connectionStatus !== BridgeClientClusterConnectionStatus.DISCONNECTED;
+        return this.connection != undefined && this.connectionStatus !== BridgeClusterConnectionStatus.DISCONNECTED;
     }
 
-    reclustering(connection: BridgeClientConnection): void {
-        this.connectionStatus = BridgeClientClusterConnectionStatus.RECLUSTERING;
+    reclustering(connection: BridgeHostConnection): void {
+        this.connectionStatus = BridgeClusterConnectionStatus.RECLUSTERING;
         this.oldConnection = this.connection;
         this.connection = connection;
     }

@@ -92,7 +92,7 @@ export class ManagedInstance extends BotInstance {
 
                 // kill all
                 if(this.connectionStatus == BridgeConnectionStatus.CONNECTED) {
-                    this.clients.forEach((client) => {
+                    this.clusters.forEach((client) => {
                         this.killProcess(client, 'Bridge connection closed');
                     });
                 }
@@ -104,7 +104,7 @@ export class ManagedInstance extends BotInstance {
 
                 if(status == 4){
                     if(this.connectionStatus == BridgeConnectionStatus.CONNECTED) {
-                        this.clients.forEach((client) => {
+                        this.clusters.forEach((client) => {
                             this.killProcess(client, 'Bridge connection closed');
                         });
                     }
@@ -127,7 +127,7 @@ export class ManagedInstance extends BotInstance {
                 this.eventMap.SELF_CHECK_RECEIVED(response);
             }
 
-            const startingClusters = this.clients.values().filter(c => c.status == 'starting').toArray();
+            const startingClusters = this.clusters.values().filter(c => c.status == 'starting').toArray();
             startingClusters.forEach((c: ClusterProcess) => {
                 if (Date.now() - c.createdAt > 10 * 60 * 1000) {
                     this.killProcess(c, 'Cluster took too long to start');
@@ -135,7 +135,7 @@ export class ManagedInstance extends BotInstance {
             })
 
             // check if there is an wrong cluster on this host
-            const wrongClusters = this.clients.values().filter(c => !response.clusterList.includes(c.id)).toArray();
+            const wrongClusters = this.clusters.values().filter(c => !response.clusterList.includes(c.id)).toArray();
             if(wrongClusters.length > 0) {
                 if(this.eventMap.SELF_CHECK_ERROR) {
                     this.eventMap.SELF_CHECK_ERROR(`Self check found wrong clusters: ${wrongClusters.map(c => c.id).join(', ')}`);
@@ -190,7 +190,7 @@ export class ManagedInstance extends BotInstance {
     private onClusterCreate(message: unknown){
         const m = message as { clusterID: number, shardList: number[], totalShards: number, token: string, intents: GatewayIntentsString[] }
 
-        if(this.clients.has(m.clusterID)) {
+        if(this.clusters.has(m.clusterID)) {
             this.eventManager?.send({
                 type: 'CLUSTER_STOPPED',
                 data: {
@@ -208,7 +208,7 @@ export class ManagedInstance extends BotInstance {
 
     private onClusterStop(message: unknown) {
         const m = message as { id: number };
-        const cluster = this.clients.get(m.id)
+        const cluster = this.clusters.get(m.id)
         if (cluster) {
             this.killProcess(cluster, `Request to stop cluster ${m.id}`);
         }
@@ -216,7 +216,7 @@ export class ManagedInstance extends BotInstance {
 
     private onClusterRecluster(message: unknown) {
         const m = message as { clusterID: number }
-        const cluster = this.clients.get(m.clusterID);
+        const cluster = this.clusters.get(m.clusterID);
         if (this.eventMap.CLUSTER_RECLUSTER && cluster) {
             this.eventMap.CLUSTER_RECLUSTER(cluster);
         }
@@ -263,7 +263,7 @@ export class ManagedInstance extends BotInstance {
             const clusterID = message.clusterID;
             const data = message.data;
 
-            const cluster = this.clients.get(clusterID);
+            const cluster = this.clusters.get(clusterID);
              if(cluster){
                  return cluster.eventManager.request({
                      type: 'CUSTOM',
@@ -274,7 +274,7 @@ export class ManagedInstance extends BotInstance {
              }
         } else if(message.type == 'CLUSTER_HEARTBEAT'){
             const clusterID = message.data.clusterID;
-            const cluster = this.clients.get(clusterID);
+            const cluster = this.clusters.get(clusterID);
             if (cluster) {
                 return new Promise<unknown>((resolve, reject) => {
                     cluster.eventManager.request({
@@ -289,7 +289,7 @@ export class ManagedInstance extends BotInstance {
                 return Promise.reject(new Error(`Cluster is not here. Cluster ID: ${clusterID}`));
             }
         } else if(message.type == 'BROADCAST_EVAL') {
-            return Promise.all(this.clients.values().filter(c => c.status == 'running').map(c => {
+            return Promise.all(this.clusters.values().filter(c => c.status == 'running').map(c => {
                 return c.eventManager.request({
                     type: 'BROADCAST_EVAL',
                     data: message.data,

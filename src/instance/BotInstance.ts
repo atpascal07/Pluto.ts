@@ -9,7 +9,7 @@ export abstract class BotInstance {
 
     private readonly execArgv: string[];
 
-    public readonly clients: Map<number, ClusterProcess> = new Map();
+    public readonly clusters: Map<number, ClusterProcess> = new Map();
 
     protected constructor(entryPoint: string, execArgv?: string[]) {
         this.entryPoint = entryPoint;
@@ -40,7 +40,7 @@ export abstract class BotInstance {
 
     protected startProcess(instanceID: number, clusterID: number, shardList: number[], totalShards: number, token: string, intents: GatewayIntentsString[]): void {
         try {
-            const child = fork(this.entryPoint, {
+            const childProcess = fork(this.entryPoint, {
                 env: {
                     INSTANCE_ID: instanceID.toString(),
                     CLUSTER_ID: clusterID.toString(),
@@ -56,40 +56,40 @@ export abstract class BotInstance {
                 detached: true,
             })
 
-            const client = new ClusterProcess(clusterID, child, shardList, totalShards);
+            const clusterProcess = new ClusterProcess(clusterID, childProcess, shardList, totalShards);
 
-            child.stdout?.on('data', (data) => {
+            childProcess.stdout?.on('data', (data) => {
                 process.stdout.write(data);
             });
 
-            child.stderr?.on('data', (data) => {
+            childProcess.stderr?.on('data', (data) => {
                 process.stderr.write(data);
             });
 
-            child.on("spawn", () => {
-                if(this.eventMap.PROCESS_SPAWNED) this.eventMap.PROCESS_SPAWNED(client);
+            childProcess.on("spawn", () => {
+                if(this.eventMap.PROCESS_SPAWNED) this.eventMap.PROCESS_SPAWNED(clusterProcess);
 
-                this.setClusterSpawned(client);
+                this.setClusterSpawned(clusterProcess);
 
-                this.clients.set(clusterID, client);
+                this.clusters.set(clusterID, clusterProcess);
 
-                client.onMessage((message) => {
-                    this.onMessage(client, message);
+                clusterProcess.onMessage((message) => {
+                    this.onMessage(clusterProcess, message);
                 })
 
-                client.onRequest((message) => {
-                    return this.onRequest(client, message);
+                clusterProcess.onRequest((message) => {
+                    return this.onRequest(clusterProcess, message);
                 });
             });
 
-            child.on("error", (err) => {
-                if(this.eventMap.PROCESS_ERROR) this.eventMap.PROCESS_ERROR(client, err);
+            childProcess.on("error", (err) => {
+                if(this.eventMap.PROCESS_ERROR) this.eventMap.PROCESS_ERROR(clusterProcess, err);
             })
 
-            child.on("exit", (err: Error) => {
-                if(client.status !== 'stopped') {
-                    client.status = 'stopped';
-                    this.killProcess(client, `Process exited: ${err?.message}`);
+            childProcess.on("exit", (err: Error) => {
+                if(clusterProcess.status !== 'stopped') {
+                    clusterProcess.status = 'stopped';
+                    this.killProcess(clusterProcess, `Process exited: ${err?.message}`);
                 }
             })
         } catch (error) {
@@ -117,38 +117,38 @@ export abstract class BotInstance {
             } else {
                 if(this.eventMap.PROCESS_KILLED) this.eventMap.PROCESS_KILLED(client, reason, false);
             }
-            this.clients.delete(client.id);
+            this.clusters.delete(client.id);
             this.setClusterStopped(client, reason);
         })
     }
 
-    protected abstract setClusterStopped(client: ClusterProcess, reason: string): void;
+    protected abstract setClusterStopped(clusterProcess: ClusterProcess, reason: string): void;
 
-    protected abstract setClusterReady(client: ClusterProcess, guilds: number, members: number): void;
+    protected abstract setClusterReady(clusterProcess: ClusterProcess, guilds: number, members: number): void;
 
-    protected abstract setClusterSpawned(client: ClusterProcess): void;
+    protected abstract setClusterSpawned(clusterProcess: ClusterProcess): void;
 
     public abstract start(): void;
 
-    private onMessage(client: ClusterProcess, message: any): void {
+    private onMessage(clusterProcess: ClusterProcess, message: any): void {
         if(message.type === 'CLUSTER_READY') {
-            client.status = 'running';
-            if(this.eventMap.CLUSTER_READY) this.eventMap.CLUSTER_READY(client);
-            this.setClusterReady(client, message.guilds || 0, message.members || 0);
+            clusterProcess.status = 'running';
+            if(this.eventMap.CLUSTER_READY) this.eventMap.CLUSTER_READY(clusterProcess);
+            this.setClusterReady(clusterProcess, message.guilds || 0, message.members || 0);
         }
 
         if (message.type === 'CLUSTER_ERROR') {
-            client.status = 'stopped';
-            if(this.eventMap.CLUSTER_ERROR) this.eventMap.CLUSTER_ERROR(client, message.error);
-            this.killProcess(client, 'Cluster error: ' + message.error);
+            clusterProcess.status = 'stopped';
+            if(this.eventMap.CLUSTER_ERROR) this.eventMap.CLUSTER_ERROR(clusterProcess, message.error);
+            this.killProcess(clusterProcess, 'Cluster error: ' + message.error);
         }
 
         if(message.type == 'CUSTOM' && this.eventMap.message) {
-            this.eventMap.message!(client, message.data);
+            this.eventMap.message!(clusterProcess, message.data);
         }
     }
 
-    protected abstract onRequest(client: ClusterProcess, message: any): Promise<unknown>;
+    protected abstract onRequest(clusterProcess: ClusterProcess, message: any): Promise<unknown>;
 
     public on<K extends keyof BotInstanceEventListeners>(event: K, listener: BotInstanceEventListeners[K]): void {
         this.eventMap[event] = listener;
@@ -156,7 +156,7 @@ export abstract class BotInstance {
 
     public sendRequestToClusterOfGuild(guildID: string, message: unknown, timeout = 5000): Promise<unknown> {
         return new Promise((resolve, reject) => {
-            for (const client of this.clients.values()) {
+            for (const client of this.clusters.values()) {
                 const shardID = ShardingUtil.getShardIDForGuild(guildID, client.totalShards);
                 if (client.shardList.includes(shardID)) {
                     client.eventManager.request({
@@ -182,16 +182,16 @@ export abstract class BotInstance {
 }
 
 export type BotInstanceEventListeners = {
-    'message': ((client: ClusterProcess,message: unknown) => void) | undefined,
-    'request': ((client: ClusterProcess, message: unknown, resolve: (data: unknown) => void, reject: (error: any) => void) => void) | undefined,
+    'message': ((clusterProcess: ClusterProcess,message: unknown) => void) | undefined,
+    'request': ((clusterProcess: ClusterProcess, message: unknown, resolve: (data: unknown) => void, reject: (error: any) => void) => void) | undefined,
 
-    'PROCESS_KILLED': ((client: ClusterProcess, reason: string, processKilled: boolean) => void) | undefined,
-    'PROCESS_SELF_DESTRUCT_ERROR': ((client: ClusterProcess, reason: string, error: unknown) => void) | undefined,
-    'PROCESS_SPAWNED': ((client: ClusterProcess) => void) | undefined,
-    'PROCESS_ERROR': ((client: ClusterProcess, error: unknown) => void) | undefined,
-    'CLUSTER_READY': ((client: ClusterProcess) => void) | undefined,
-    'CLUSTER_ERROR': ((client: ClusterProcess, error: unknown) => void) | undefined,
-    'CLUSTER_RECLUSTER': ((client: ClusterProcess) => void) | undefined,
+    'PROCESS_KILLED': ((clusterProcess: ClusterProcess, reason: string, processKilled: boolean) => void) | undefined,
+    'PROCESS_SELF_DESTRUCT_ERROR': ((clusterProcess: ClusterProcess, reason: string, error: unknown) => void) | undefined,
+    'PROCESS_SPAWNED': ((clusterProcess: ClusterProcess) => void) | undefined,
+    'PROCESS_ERROR': ((clusterProcess: ClusterProcess, error: unknown) => void) | undefined,
+    'CLUSTER_READY': ((clusterProcess: ClusterProcess) => void) | undefined,
+    'CLUSTER_ERROR': ((clusterProcess: ClusterProcess, error: unknown) => void) | undefined,
+    'CLUSTER_RECLUSTER': ((clusterProcess: ClusterProcess) => void) | undefined,
     'ERROR': ((error: string) => void) | undefined,
 
     'BRIDGE_CONNECTION_ESTABLISHED': (() => void) | undefined,

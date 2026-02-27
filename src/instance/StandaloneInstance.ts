@@ -40,42 +40,42 @@ export class StandaloneInstance extends BotInstance {
         }
     }
 
-    protected setClusterStopped(client: ClusterProcess, reason: string): void {
-        this.clients.delete(client.id);
-        this.restartProcess(client);
+    protected setClusterStopped(clusterProcess: ClusterProcess, reason: string): void {
+        this.clusters.delete(clusterProcess.id);
+        this.restartProcess(clusterProcess);
     }
 
-    protected setClusterReady(client: ClusterProcess): void {
+    protected setClusterReady(clusterProcess: ClusterProcess): void {
         
     }
 
-    protected setClusterSpawned(client: ClusterProcess): void {
+    protected setClusterSpawned(clusterProcess: ClusterProcess): void {
 
     }
 
-    private restartProcess(client: ClusterProcess): void {
-        this.startProcess(1, client.id, client.shardList, this.totalShards, this.token, this.intents);
+    private restartProcess(clusterProcess: ClusterProcess): void {
+        this.startProcess(1, clusterProcess.id, clusterProcess.shardList, this.totalShards, this.token, this.intents);
     }
 
-    protected onRequest(client: ClusterProcess, message: any): Promise<unknown> {
+    protected onRequest(clusterProcess: ClusterProcess, message: any): Promise<unknown> {
         if(message.type === 'REDIRECT_REQUEST_TO_GUILD'){
             const guildID = message.guildID;
             const data = message.data;
 
-            const shardID = ShardingUtil.getShardIDForGuild(guildID, client.totalShards);
-            if(client.shardList.includes(shardID)) {
-                return client.eventManager.request({
+            const shardID = ShardingUtil.getShardIDForGuild(guildID, clusterProcess.totalShards);
+            if(clusterProcess.shardList.includes(shardID)) {
+                return clusterProcess.eventManager.request({
                     type: 'CUSTOM',
                     data: data
                 }, 5000)
             } else {
-                return Promise.reject(new Error(`Shard ID ${shardID} not found in cluster ${client.id} for guild ${guildID}`));
+                return Promise.reject(new Error(`Shard ID ${shardID} not found in cluster ${clusterProcess.id} for guild ${guildID}`));
             }
         }
 
         if(message.type == 'BROADCAST_EVAL') {
             return Promise.all(
-                this.clients.values().map(c => {
+                this.clusters.values().map(c => {
                     return c.eventManager.request({
                         type: 'BROADCAST_EVAL',
                         data: message.data,
@@ -86,7 +86,7 @@ export class StandaloneInstance extends BotInstance {
 
         if(message.type == 'CUSTOM' && this.eventMap.request) {
             return new Promise((resolve, reject) => {
-                this.eventMap.request!(client, message.data, resolve, reject);
+                this.eventMap.request!(clusterProcess, message.data, resolve, reject);
             });
         }
 

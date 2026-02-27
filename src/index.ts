@@ -1,5 +1,5 @@
-export * from './bridge/BridgeClientCluster';
-export * from './bridge/BridgeClientConnection';
+export * from './bridge/BridgeClusterConnection';
+export * from './bridge/BridgeHostConnection';
 export * from './bridge/Bridge';
 export * from './bridge/ClusterCalculator';
 
