@@ -286,6 +286,7 @@ export class Bridge {
             const clusters = this.clusterCalculator.getClusterForConnection(closedConnection);
             for (const cluster of clusters) {
                 this.clusterCalculator.clearClusterConnection(cluster.clusterID);
+                if(this.eventMap.CLUSTER_STOPPED) this.eventMap.CLUSTER_STOPPED(cluster);
             }
 
             this.connectedClients.delete(connection.id);
@@ -361,7 +362,7 @@ export class Bridge {
             type: 'INSTANCE_STOP'
         });
 
-        if(recluster) {
+        if(recluster && this.connectedClients.size > 1) {
             while ((clusterToSteal = this.clusterCalculator.getClusterForConnection(instance).filter(c =>
                 c.connectionStatus === BridgeClientClusterConnectionStatus.CONNECTED ||
                 c.connectionStatus == BridgeClientClusterConnectionStatus.STARTING ||
@@ -409,19 +410,14 @@ export class Bridge {
                 }, 1000);
             })
         } else {
-            for(const cluster of this.clusterCalculator.getClusterForConnection(instance)) {
-                await instance.eventManager.send({
-                    type: 'CLUSTER_STOP',
-                    data: {
-                        id: cluster.clusterID
-                    }
-                });
+            const clusters = this.clusterCalculator.getClusterForConnection(instance);
+            for (const cluster of clusters) {
+                this.clusterCalculator.clearClusterConnection(cluster.clusterID);
+                if(this.eventMap.CLUSTER_STOPPED) this.eventMap.CLUSTER_STOPPED(cluster);
             }
 
-
-            await instance.eventManager.send({
-                type: 'INSTANCE_STOPPED'
-            })
+            this.connectedClients.delete(instance.connection.id);
+            if(this.eventMap.CLIENT_DISCONNECTED) this.eventMap.CLIENT_DISCONNECTED(instance, "Instance stopped");
             await instance.connection.close("Instance stopped.", false);
         }
     }
