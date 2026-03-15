@@ -178,6 +178,7 @@ export class Bridge {
             if (this.eventMap.HOST_CONNECTED) this.eventMap.HOST_CONNECTED(bridgeConnection);
 
             bridgeConnection.onMessage((m: any) => {
+                console.log("Received message", m.type);
                 if (m.type == 'CLUSTER_SPAWNED') {
                     const cluster = this.clusterCalculator.getClusterForConnection(bridgeConnection).find(c => c.clusterID === m.data.id);
                     if (cluster) {
@@ -206,11 +207,14 @@ export class Bridge {
                 }
 
                 if (m.type == 'CLUSTER_STOPPED') {
+                    console.log("Called Cluster Stopp")
                     const cluster = this.clusterCalculator.getClusterForConnection(bridgeConnection).find(c => c.clusterID === m.data.id);
+                    console.log("Found Cluster: ", cluster?.clusterID)
                     if (cluster) {
                         cluster.startedAt = undefined;
                         if (this.eventMap.CLUSTER_STOPPED) this.eventMap.CLUSTER_STOPPED(cluster);
                         cluster.setConnection(undefined);
+                        console.log("Sent Cluster Stopped", cluster.connection, cluster.connectionStatus)
                     }
                     return;
                 }
@@ -362,6 +366,7 @@ export class Bridge {
         });
 
         if (recluster && this.connectedHosts.size > 1) {
+
             while ((clusterToSteal = this.clusterCalculator.getClusterForConnection(bridgeConnection).filter(c =>
                 c.connectionStatus === BridgeClusterConnectionStatus.CONNECTED ||
                 c.connectionStatus == BridgeClusterConnectionStatus.STARTING ||
@@ -411,6 +416,7 @@ export class Bridge {
         } else {
             const clusters = this.clusterCalculator.getClusterForConnection(bridgeConnection);
             for (const cluster of clusters) {
+                console.log("Stopping cluster", cluster.clusterID)
                 await bridgeConnection.eventManager.send({
                     type: 'CLUSTER_STOP',
                     data: {
@@ -422,7 +428,6 @@ export class Bridge {
 
             if(this.eventMap.HOST_DISCONNECTED) this.eventMap.HOST_DISCONNECTED(bridgeConnection, "Instance stopped");
             await bridgeConnection.connection.close("Instance stopped.", false);
-            this.connectedHosts.delete(bridgeConnection.connection.id);
         }
     }
 
