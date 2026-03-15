@@ -74,7 +74,7 @@ export class Bridge {
             if (least && clusterToSteal) {
                 clusterToSteal.reclustering(least);
 
-                if(this.eventMap.CLUSTER_RECLUSTER) this.eventMap.CLUSTER_RECLUSTER(clusterToSteal, least, clusterToSteal.oldConnection!);
+                if (this.eventMap.CLUSTER_RECLUSTER) this.eventMap.CLUSTER_RECLUSTER(clusterToSteal, least, clusterToSteal.oldConnection!);
                 this.createCluster(least, clusterToSteal, true);
 
                 return;
@@ -86,7 +86,7 @@ export class Bridge {
         const clusters = this.clusterCalculator.clusterList;
 
         clusters.forEach((cluster) => {
-            if(cluster.connection && cluster.connectionStatus == BridgeClusterConnectionStatus.CONNECTED && !cluster.heartbeatPending) {
+            if (cluster.connection && cluster.connectionStatus == BridgeClusterConnectionStatus.CONNECTED && !cluster.heartbeatPending) {
                 cluster.heartbeatPending = true;
                 cluster.connection.eventManager.request<HeartbeatResponse>({
                     type: 'CLUSTER_HEARTBEAT',
@@ -97,10 +97,10 @@ export class Bridge {
                     cluster.removeMissedHeartbeat();
                     cluster.heartbeatResponse = r;
                 }).catch((err) => {
-                    if(this.eventMap.CLUSTER_HEARTBEAT_FAILED) this.eventMap.CLUSTER_HEARTBEAT_FAILED(cluster, err)
+                    if (this.eventMap.CLUSTER_HEARTBEAT_FAILED) this.eventMap.CLUSTER_HEARTBEAT_FAILED(cluster, err)
                     cluster.addMissedHeartbeat()
 
-                    if(cluster.missedHeartbeats > 7 && !cluster.connection?.dev){
+                    if (cluster.missedHeartbeats > 7 && !cluster.connection?.dev) {
                         cluster.connection?.eventManager.send({
                             type: 'CLUSTER_STOP',
                             data: {
@@ -145,7 +145,7 @@ export class Bridge {
                 }
             })
         }
-        if(this.eventMap.CLUSTER_SPAWNED) this.eventMap.CLUSTER_SPAWNED(cluster, connection)
+        if (this.eventMap.CLUSTER_SPAWNED) this.eventMap.CLUSTER_SPAWNED(cluster, connection)
         connection.eventManager.send({
             type: 'CLUSTER_CREATE',
             data: {
@@ -175,7 +175,7 @@ export class Bridge {
             }
 
             const bridgeConnection = new BridgeHostConnection(payload.id, connection, data, dev);
-            if(this.eventMap.HOST_CONNECTED) this.eventMap.HOST_CONNECTED(bridgeConnection);
+            if (this.eventMap.HOST_CONNECTED) this.eventMap.HOST_CONNECTED(bridgeConnection);
 
             bridgeConnection.onMessage((m: any) => {
                 if (m.type == 'CLUSTER_SPAWNED') {
@@ -190,7 +190,7 @@ export class Bridge {
                     const cluster = this.clusterCalculator.getClusterForConnection(bridgeConnection).find(c => c.clusterID === m.data.id);
                     if (cluster) {
                         cluster.startedAt = Date.now();
-                        if(this.eventMap.CLUSTER_READY) this.eventMap.CLUSTER_READY(cluster, m.data.guilds || 0, m.data.members || 0);
+                        if (this.eventMap.CLUSTER_READY) this.eventMap.CLUSTER_READY(cluster, m.data.guilds || 0, m.data.members || 0);
                         cluster.connectionStatus = BridgeClusterConnectionStatus.CONNECTED;
                         if (cluster.oldConnection) {
                             cluster.oldConnection.eventManager.send({
@@ -209,13 +209,13 @@ export class Bridge {
                     const cluster = this.clusterCalculator.getClusterForConnection(bridgeConnection).find(c => c.clusterID === m.data.id);
                     if (cluster) {
                         cluster.startedAt = undefined;
-                        if(this.eventMap.CLUSTER_STOPPED) this.eventMap.CLUSTER_STOPPED(cluster);
+                        if (this.eventMap.CLUSTER_STOPPED) this.eventMap.CLUSTER_STOPPED(cluster);
                         cluster.setConnection(undefined);
                     }
                     return;
                 }
 
-                if(m.type == "INSTANCE_STOP") {
+                if (m.type == "INSTANCE_STOP") {
                     this.stopInstance(bridgeConnection);
                 }
 
@@ -223,18 +223,18 @@ export class Bridge {
             })
 
             bridgeConnection.onRequest((m: any) => {
-                if(m.type == 'REDIRECT_REQUEST_TO_GUILD'){
+                if (m.type == 'REDIRECT_REQUEST_TO_GUILD') {
                     const guildID = m.guildID;
                     const shardID = ShardingUtil.getShardIDForGuild(guildID, this.getTotalShards());
                     const cluster = this.clusterCalculator.getClusterOfShard(shardID);
-                    if(!cluster){
+                    if (!cluster) {
                         return Promise.reject(new Error("cluster not found"))
                     }
-                    if(cluster.connectionStatus != BridgeClusterConnectionStatus.CONNECTED){
+                    if (cluster.connectionStatus != BridgeClusterConnectionStatus.CONNECTED) {
                         return Promise.reject(new Error("cluster not connected."))
                     }
 
-                    if(!cluster.connection?.eventManager){
+                    if (!cluster.connection?.eventManager) {
                         return Promise.reject(new Error("no connection defined."))
                     }
 
@@ -246,7 +246,7 @@ export class Bridge {
                     }, 5000)
                 }
 
-                if(m.type == 'BROADCAST_EVAL') {
+                if (m.type == 'BROADCAST_EVAL') {
                     const responses = Promise.all(
                         this.connectedHosts.values().map(c => {
                             return c.eventManager.request<unknown[]>({
@@ -262,7 +262,7 @@ export class Bridge {
                     })
                 }
 
-                if(m.type == 'SELF_CHECK') {
+                if (m.type == 'SELF_CHECK') {
                     return {
                         clusterList: [
                             ...this.clusterCalculator.getClusterForConnection(bridgeConnection).map(c => c.clusterID),
@@ -286,11 +286,10 @@ export class Bridge {
             const clusters = this.clusterCalculator.getClusterForConnection(closedConnection);
             for (const cluster of clusters) {
                 this.clusterCalculator.clearClusterConnection(cluster.clusterID);
-                if(this.eventMap.CLUSTER_STOPPED) this.eventMap.CLUSTER_STOPPED(cluster);
             }
 
+            if (this.eventMap.HOST_DISCONNECTED) this.eventMap.HOST_DISCONNECTED(closedConnection, reason);
             this.connectedHosts.delete(connection.id);
-            if(this.eventMap.HOST_DISCONNECTED) this.eventMap.HOST_DISCONNECTED(closedConnection, reason);
         });
 
         this.server.on("message", (message, connection) => {
@@ -352,30 +351,30 @@ export class Bridge {
         this.createCluster(instance, cluster, true);
     }
 
-    async stopInstance(instance: BridgeHostConnection, recluster = true) {
-        if(this.eventMap.HOST_STOP) this.eventMap.HOST_STOP(instance);
-        instance.connectionStatus = BridgeHostConnectionStatus.PENDING_STOP;
+    async stopInstance(bridgeConnection: BridgeHostConnection, recluster = true) {
+        if (this.eventMap.HOST_STOP) this.eventMap.HOST_STOP(bridgeConnection);
+        bridgeConnection.connectionStatus = BridgeHostConnectionStatus.PENDING_STOP;
 
         let clusterToSteal: BridgeClusterConnection | undefined;
 
-        await instance.eventManager.send({
+        await bridgeConnection.eventManager.send({
             type: 'INSTANCE_STOP'
         });
 
-        if(recluster && this.connectedHosts.size > 1) {
-            while ((clusterToSteal = this.clusterCalculator.getClusterForConnection(instance).filter(c =>
+        if (recluster && this.connectedHosts.size > 1) {
+            while ((clusterToSteal = this.clusterCalculator.getClusterForConnection(bridgeConnection).filter(c =>
                 c.connectionStatus === BridgeClusterConnectionStatus.CONNECTED ||
                 c.connectionStatus == BridgeClusterConnectionStatus.STARTING ||
                 c.connectionStatus == BridgeClusterConnectionStatus.RECLUSTERING)[0]) !== undefined) {
                 // skip if the cluster is not connected
-                if(clusterToSteal.connectionStatus != BridgeClusterConnectionStatus.CONNECTED) break;
+                if (clusterToSteal.connectionStatus != BridgeClusterConnectionStatus.CONNECTED) break;
 
                 const least = this.clusterCalculator.getClusterWithLowestLoad(this.connectedHosts);
                 if (!least) {
                     if (this.eventMap.ERROR) {
                         this.eventMap.ERROR("Reclustering failed: No least cluster found.");
                     }
-                    await instance.eventManager.send({
+                    await bridgeConnection.eventManager.send({
                         type: 'CLUSTER_STOP',
                         data: {
                             id: clusterToSteal.clusterID
@@ -397,33 +396,38 @@ export class Bridge {
 
             return new Promise<void>((resolve, reject) => {
                 const interval = setInterval(async () => {
-                    const cluster = this.clusterCalculator.getOldClusterForConnection(instance)[0] || undefined;
+                    const cluster = this.clusterCalculator.getOldClusterForConnection(bridgeConnection)[0] || undefined;
                     if (!cluster) {
                         clearInterval(interval);
-                        await instance.eventManager.send({
+                        await bridgeConnection.eventManager.send({
                             type: 'INSTANCE_STOPPED'
                         })
-                        await instance.connection.close("Instance stopped.", false);
+                        await bridgeConnection.connection.close("Instance stopped.", false);
                         resolve();
                         return;
                     }
                 }, 1000);
             })
         } else {
-            const clusters = this.clusterCalculator.getClusterForConnection(instance);
+            const clusters = this.clusterCalculator.getClusterForConnection(bridgeConnection);
             for (const cluster of clusters) {
-                this.clusterCalculator.clearClusterConnection(cluster.clusterID);
-                if(this.eventMap.CLUSTER_STOPPED) this.eventMap.CLUSTER_STOPPED(cluster);
+                await bridgeConnection.eventManager.send({
+                    type: 'CLUSTER_STOP',
+                    data: {
+                        id: cluster.clusterID
+                    }
+                });
             }
+            await bridgeConnection.eventManager.send({ type: 'INSTANCE_STOPPED' });
 
-            this.connectedHosts.delete(instance.connection.id);
-            if(this.eventMap.HOST_DISCONNECTED) this.eventMap.HOST_DISCONNECTED(instance, "Instance stopped");
-            await instance.connection.close("Instance stopped.", false);
+            if(this.eventMap.HOST_DISCONNECTED) this.eventMap.HOST_DISCONNECTED(bridgeConnection, "Instance stopped");
+            await bridgeConnection.connection.close("Instance stopped.", false);
+            this.connectedHosts.delete(bridgeConnection.connection.id);
         }
     }
 
     sendRequestToGuild(cluster: BridgeClusterConnection, guildID: Snowflake, data: unknown, timeout = 5000): Promise<unknown> {
-        if(!cluster.connection){
+        if (!cluster.connection) {
             return Promise.reject(new Error("No connection defined for cluster " + cluster.clusterID));
         }
 
