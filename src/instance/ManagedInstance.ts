@@ -37,7 +37,7 @@ export class ManagedInstance extends BotInstance {
     }
 
     public start() {
-        const client = new Client({
+        const instance = new Client({
             host: this.host,
             port: this.port,
             reconnect: true,
@@ -45,8 +45,8 @@ export class ManagedInstance extends BotInstance {
         });
 
         this.eventManager = new EventManager((message) => {
-            if (client.status == 3) {
-                return client.send(message);
+            if (instance.status == 3) {
+                return instance.send(message);
             }
             return Promise.reject(new Error('Client is not ready to send messages'));
         }, (message) => {
@@ -72,7 +72,7 @@ export class ManagedInstance extends BotInstance {
             }
         }, 2500); // 5 minutes
 
-        client.connect({
+        instance.connect({
             id: this.instanceID,
             dev: this.dev,
             data: this.data,
@@ -80,10 +80,10 @@ export class ManagedInstance extends BotInstance {
             if (this.eventMap.BRIDGE_CONNECTION_ESTABLISHED) this.eventMap.BRIDGE_CONNECTION_ESTABLISHED();
             this.connectionStatus = BridgeConnectionStatus.CONNECTED;
 
-            client.on("message", (message) => {
+            instance.on("message", (message) => {
                 this.eventManager?.receive(message);
             })
-            client.on("close", (reason) => {
+            instance.on("close", (reason) => {
                 if (this.eventMap.BRIDGE_CONNECTION_CLOSED) this.eventMap.BRIDGE_CONNECTION_CLOSED(reason);
 
                 // kill all
@@ -95,7 +95,7 @@ export class ManagedInstance extends BotInstance {
                 this.connectionStatus = BridgeConnectionStatus.DISCONNECTED;
             });
 
-            client.on("status", (status) => {
+            instance.on("status", (status) => {
                 if (this.eventMap.BRIDGE_CONNECTION_STATUS_CHANGE) this.eventMap.BRIDGE_CONNECTION_STATUS_CHANGE(status);
 
                 if (status == 4) {

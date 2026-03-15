@@ -51,10 +51,6 @@ machine.on("INSTANCE_STOP", () => {
     console.log("Instance stop requested")
 })
 
-machine.on("INSTANCE_DISCONNECTED", () => {
-    console.log("Instance stopped")
-})
-
 machine.on("SELF_CHECK_SUCCESS", () => {
     console.log("Self check successful")
 });
@@ -83,3 +79,7 @@ process.stdin.on('data', async function (text: Buffer) {
         machine.stopInstance();
     }
 });
+
+process.on("beforeExit", () => {
+
+})
