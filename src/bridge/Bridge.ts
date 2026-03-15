@@ -20,7 +20,7 @@ export class Bridge {
     private readonly eventMap: BridgeEventListeners = {
         CLUSTER_READY: undefined, CLUSTER_HEARTBEAT_FAILED: undefined,
         CLUSTER_STOPPED: undefined, CLUSTER_SPAWNED: undefined, CLUSTER_RECLUSTER: undefined,
-        INSTANCE_CONNECTED: undefined, INSTANCE_DISCONNECTED: undefined,
+        INSTANCE_CONNECTED: undefined, INSTANCE_DISCONNECTED: undefined, INSTANCE_STOP_ACK: undefined, INSTANCE_STOP: undefined,
         ERROR: undefined
     }
 
@@ -220,7 +220,7 @@ export class Bridge {
                 }
 
                 if (m.type == "INSTANCE_DISCONNECTED") {
-                    if (this.eventMap.INSTANCE_DISCONNECTED) this.eventMap.INSTANCE_DISCONNECTED(bridgeInstanceConnection, "Instance stopped itself.");
+                    if (this.eventMap.INSTANCE_DISCONNECTED) this.eventMap.INSTANCE_DISCONNECTED(bridgeInstanceConnection, "Instance stopped.");
                 }
 
                 return;
@@ -361,8 +361,9 @@ export class Bridge {
         let clusterToStealConnection: BridgeClusterConnection | undefined;
 
         await bridgeInstanceConnection.eventManager.send({
-            type: 'INSTANCE_STOP'
+            type: 'INSTANCE_STOP_ACK'
         });
+        if(this.eventMap.INSTANCE_STOP_ACK) this.eventMap.INSTANCE_STOP_ACK(bridgeInstanceConnection);
 
         if (recluster) {
             while ((clusterToStealConnection = this.clusterCalculator.getClusterForConnection(bridgeInstanceConnection).filter(c =>
@@ -402,7 +403,10 @@ export class Bridge {
                     const cluster = this.clusterCalculator.getOldClusterForConnection(bridgeInstanceConnection)[0] || undefined;
                     if (!cluster) {
                         clearInterval(interval);
-                        if (this.eventMap.INSTANCE_DISCONNECTED) this.eventMap.INSTANCE_DISCONNECTED(bridgeInstanceConnection, "Instance stopped.")
+                        await bridgeInstanceConnection.eventManager.send({
+                            type: 'INSTANCE_STOP'
+                        });
+                        if(this.eventMap.INSTANCE_STOP) this.eventMap.INSTANCE_STOP(bridgeInstanceConnection);
                         await bridgeInstanceConnection.connection.close("Instance stopped.", false);
                         resolve();
                         return;
@@ -415,8 +419,13 @@ export class Bridge {
                 cluster.connectionStatus = BridgeClusterConnectionStatus.DISCONNECTED;
             });
 
+            await bridgeInstanceConnection.eventManager.send({
+                type: 'INSTANCE_STOP'
+            });
+            if(this.eventMap.INSTANCE_STOP) this.eventMap.INSTANCE_STOP(bridgeInstanceConnection);
+            if(this.eventMap.INSTANCE_DISCONNECTED) this.eventMap.INSTANCE_DISCONNECTED(bridgeInstanceConnection, "Instance stopped.");
+
             await bridgeInstanceConnection.connection.close("Instance stopped.", true);
-            if (this.eventMap.INSTANCE_DISCONNECTED) this.eventMap.INSTANCE_DISCONNECTED(bridgeInstanceConnection, "Instance stopped.")
         }
     }
 
@@ -442,5 +451,7 @@ export type BridgeEventListeners = {
     'CLUSTER_HEARTBEAT_FAILED': ((cluster: BridgeClusterConnection, error: unknown) => void) | undefined,
     'INSTANCE_CONNECTED': ((client: BridgeInstanceConnection) => void) | undefined,
     'INSTANCE_DISCONNECTED': ((client: BridgeInstanceConnection, reason: string) => void) | undefined,
+    'INSTANCE_STOP_ACK': ((cluster: BridgeInstanceConnection) => void) | undefined,
+    'INSTANCE_STOP': ((cluster: BridgeInstanceConnection) => void) | undefined,
     'ERROR': ((error: string) => void) | undefined,
 };

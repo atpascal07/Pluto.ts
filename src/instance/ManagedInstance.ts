@@ -57,10 +57,10 @@ export class ManagedInstance extends BotInstance {
                 this.onClusterStop(m.data);
             } else if (m.type == 'CLUSTER_RECLUSTER') {
                 this.onClusterRecluster(m.data);
+            } else if (m.type == 'INSTANCE_STOP_ACK') {
+                if (this.eventMap.INSTANCE_STOP_ACK) this.eventMap.INSTANCE_STOP_ACK();
             } else if (m.type == 'INSTANCE_STOP') {
                 if (this.eventMap.INSTANCE_STOP) this.eventMap.INSTANCE_STOP();
-            } else if (m.type == 'INSTANCE_DISCONNECTED') {
-                if (this.eventMap.INSTANCE_DISCONNECTED) this.eventMap.INSTANCE_DISCONNECTED();
             }
         }, (message) => {
             return this.onBridgeRequest(message);
