@@ -27,18 +27,22 @@ yarn add galactic.ts
 
 ## Quick Start Example
 
+### Standalone Setup (Single Machine)
+
 ```ts filename="index.ts"
 import {StandaloneInstance} from "galactic.ts";
 
 // Create a standalone instance running 2 clusters with 2 shards each
-const machine = new StandaloneInstance(
+const instance = new StandaloneInstance(
     `${__dirname}/bot.js`,
-    2, 2, process.env.TEST_SA_BOT_TOKEN!, 
+    2, 2, process.env.BOT_TOKEN!, 
     []
 );
 
-machine.start();
+instance.start();
 ```
+
+### Bot File Setup
 
 ```ts filename="bot.ts"
 import {Cluster} from "galactic.ts";
@@ -73,10 +77,17 @@ client.login(cluster.token)
 To scale your bot across multiple servers or containers, galactic uses the **galactic Bridge**.  
 Each instance connects to the same bridge to coordinate shard and cluster responsibilities.
 
-Typical setup:
-1. Deploy multiple galactic instances (e.g., on different VPS or Docker nodes)
-2. Configure each instance to connect to the same galactic Bridge
-3. galactic automatically balances shards across all connected nodes
+Typical distributed setup:
+1. Deploy a **Bridge** (centralized coordinator for all instances)
+2. Deploy multiple galactic **instances** (e.g., on different VPS or Docker nodes)
+3. Configure each instance to connect to the shared Bridge
+4. galactic automatically distributes and balances clusters and shards across all connected instances
+
+### Terminology
+- **Instance**: A bot deployment (StandaloneInstance, ManagedInstance) that manages clusters
+- **Cluster**: A process group within an instance that manages shards
+- **Shard**: Discord gateway connection for a portion of guilds
+- **Bridge**: Centralized coordinator for multi-instance deployments
 
 ## Integration with Discord.js
 

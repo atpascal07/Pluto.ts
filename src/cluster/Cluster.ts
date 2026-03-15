@@ -150,7 +150,6 @@ export class Cluster<T extends Client> {
 
                         this.client.shard?.fetchClientValues('uptime', shard.id).then(values => {
                             shardPings[shard.id]["uptime"] = values
-                            console.log(values)
                         }).catch(e => {
 
                         })
