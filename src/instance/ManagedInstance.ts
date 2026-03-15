@@ -45,33 +45,29 @@ export class ManagedInstance extends BotInstance {
         });
 
         this.eventManager = new EventManager((message) => {
-            if(client.status == 3) {
+            if (client.status == 3) {
                 return client.send(message);
             }
             return Promise.reject(new Error('Client is not ready to send messages'));
         }, (message) => {
             const m = message as { type: string, data: unknown };
-            if(m.type == 'CLUSTER_CREATE') {
+            if (m.type == 'CLUSTER_CREATE') {
                 this.onClusterCreate(m.data)
             } else if (m.type == 'CLUSTER_STOP') {
                 this.onClusterStop(m.data);
-            } else if(m.type == 'CLUSTER_RECLUSTER') {
+            } else if (m.type == 'CLUSTER_RECLUSTER') {
                 this.onClusterRecluster(m.data);
-            } else if(m.type == 'INSTANCE_STOP') {
-                if(this.eventMap.INSTANCE_STOP) {
-                    this.eventMap.INSTANCE_STOP();
-                }
-            } else if(m.type == 'INSTANCE_STOPPED') {
-                if(this.eventMap.INSTANCE_STOPPED) {
-                    this.eventMap.INSTANCE_STOPPED();
-                }
+            } else if (m.type == 'INSTANCE_STOP') {
+                if (this.eventMap.INSTANCE_STOP) this.eventMap.INSTANCE_STOP();
+            } else if (m.type == 'INSTANCE_DISCONNECTED') {
+                if (this.eventMap.INSTANCE_DISCONNECTED) this.eventMap.INSTANCE_DISCONNECTED();
             }
         }, (message) => {
             return this.onBridgeRequest(message);
         });
 
         setInterval(() => {
-            if(this.connectionStatus == BridgeConnectionStatus.CONNECTED) {
+            if (this.connectionStatus == BridgeConnectionStatus.CONNECTED) {
                 this.selfCheck();
             }
         }, 2500); // 5 minutes
@@ -81,17 +77,17 @@ export class ManagedInstance extends BotInstance {
             dev: this.dev,
             data: this.data,
         }).then(_ => {
-            if(this.eventMap.BRIDGE_CONNECTION_ESTABLISHED) this.eventMap.BRIDGE_CONNECTION_ESTABLISHED();
+            if (this.eventMap.BRIDGE_CONNECTION_ESTABLISHED) this.eventMap.BRIDGE_CONNECTION_ESTABLISHED();
             this.connectionStatus = BridgeConnectionStatus.CONNECTED;
 
             client.on("message", (message) => {
                 this.eventManager?.receive(message);
             })
             client.on("close", (reason) => {
-                if(this.eventMap.BRIDGE_CONNECTION_CLOSED) this.eventMap.BRIDGE_CONNECTION_CLOSED(reason);
+                if (this.eventMap.BRIDGE_CONNECTION_CLOSED) this.eventMap.BRIDGE_CONNECTION_CLOSED(reason);
 
                 // kill all
-                if(this.connectionStatus == BridgeConnectionStatus.CONNECTED) {
+                if (this.connectionStatus == BridgeConnectionStatus.CONNECTED) {
                     this.clusters.forEach((client) => {
                         this.killProcess(client, 'Bridge connection closed');
                     });
@@ -100,18 +96,18 @@ export class ManagedInstance extends BotInstance {
             });
 
             client.on("status", (status) => {
-                if(this.eventMap.BRIDGE_CONNECTION_STATUS_CHANGE) this.eventMap.BRIDGE_CONNECTION_STATUS_CHANGE(status);
+                if (this.eventMap.BRIDGE_CONNECTION_STATUS_CHANGE) this.eventMap.BRIDGE_CONNECTION_STATUS_CHANGE(status);
 
-                if(status == 4){
-                    if(this.connectionStatus == BridgeConnectionStatus.CONNECTED) {
+                if (status == 4) {
+                    if (this.connectionStatus == BridgeConnectionStatus.CONNECTED) {
                         this.clusters.forEach((client) => {
                             this.killProcess(client, 'Bridge connection closed');
                         });
                     }
                     this.connectionStatus = BridgeConnectionStatus.DISCONNECTED;
-                } else if(status == 3){
+                } else if (status == 3) {
                     this.connectionStatus = BridgeConnectionStatus.CONNECTED;
-                    if(this.eventMap.BRIDGE_CONNECTION_ESTABLISHED) this.eventMap.BRIDGE_CONNECTION_ESTABLISHED();
+                    if (this.eventMap.BRIDGE_CONNECTION_ESTABLISHED) this.eventMap.BRIDGE_CONNECTION_ESTABLISHED();
                 }
             });
         })
@@ -123,7 +119,7 @@ export class ManagedInstance extends BotInstance {
         }, 1000 * 60).then((r) => {
             const response = r as { clusterList: number[] };
 
-            if(this.eventMap.SELF_CHECK_RECEIVED) {
+            if (this.eventMap.SELF_CHECK_RECEIVED) {
                 this.eventMap.SELF_CHECK_RECEIVED(response);
             }
 
@@ -136,20 +132,20 @@ export class ManagedInstance extends BotInstance {
 
             // check if there is an wrong cluster on this host
             const wrongClusters = this.clusters.values().filter(c => !response.clusterList.includes(c.id)).toArray();
-            if(wrongClusters.length > 0) {
-                if(this.eventMap.SELF_CHECK_ERROR) {
+            if (wrongClusters.length > 0) {
+                if (this.eventMap.SELF_CHECK_ERROR) {
                     this.eventMap.SELF_CHECK_ERROR(`Self check found wrong clusters: ${wrongClusters.map(c => c.id).join(', ')}`);
                 }
                 wrongClusters.forEach(c => {
                     this.killProcess(c, 'Self check found wrong cluster');
                 });
             } else {
-                if(this.eventMap.SELF_CHECK_SUCCESS) {
+                if (this.eventMap.SELF_CHECK_SUCCESS) {
                     this.eventMap.SELF_CHECK_SUCCESS();
                 }
             }
         }).catch((err) => {
-            if(this.eventMap.SELF_CHECK_ERROR) {
+            if (this.eventMap.SELF_CHECK_ERROR) {
                 this.eventMap.SELF_CHECK_ERROR(`Self check failed: ${err}`);
             }
         });
@@ -187,10 +183,16 @@ export class ManagedInstance extends BotInstance {
         });
     }
 
-    private onClusterCreate(message: unknown){
-        const m = message as { clusterID: number, shardList: number[], totalShards: number, token: string, intents: GatewayIntentsString[] }
+    private onClusterCreate(message: unknown) {
+        const m = message as {
+            clusterID: number,
+            shardList: number[],
+            totalShards: number,
+            token: string,
+            intents: GatewayIntentsString[]
+        }
 
-        if(this.clusters.has(m.clusterID)) {
+        if (this.clusters.has(m.clusterID)) {
             this.eventManager?.send({
                 type: 'CLUSTER_STOPPED',
                 data: {
@@ -223,12 +225,12 @@ export class ManagedInstance extends BotInstance {
     }
 
     protected onRequest(client: ClusterProcess, message: any): Promise<unknown> {
-        if(message.type === 'REDIRECT_REQUEST_TO_GUILD'){
+        if (message.type === 'REDIRECT_REQUEST_TO_GUILD') {
             const guildID = message.guildID;
             const data = message.data;
 
             const shardID = ShardingUtil.getShardIDForGuild(guildID, client.totalShards);
-            if(client.shardList.includes(shardID)) {
+            if (client.shardList.includes(shardID)) {
                 return client.eventManager.request({
                     type: 'CUSTOM',
                     data: data
@@ -242,14 +244,14 @@ export class ManagedInstance extends BotInstance {
             }
         }
 
-        if(message.type == 'BROADCAST_EVAL') {
+        if (message.type == 'BROADCAST_EVAL') {
             return this.eventManager.request({
                 type: 'BROADCAST_EVAL',
                 data: message.data
             }, 5000)
         }
 
-        if(message.type == 'CUSTOM' && this.eventMap.request) {
+        if (message.type == 'CUSTOM' && this.eventMap.request) {
             return new Promise((resolve, reject) => {
                 this.eventMap.request!(client, message.data, resolve, reject);
             });
@@ -259,20 +261,20 @@ export class ManagedInstance extends BotInstance {
     }
 
     private onBridgeRequest(message: any): Promise<unknown> {
-        if(message.type === 'REDIRECT_REQUEST_TO_GUILD'){
+        if (message.type === 'REDIRECT_REQUEST_TO_GUILD') {
             const clusterID = message.clusterID;
             const data = message.data;
 
             const cluster = this.clusters.get(clusterID);
-             if(cluster){
-                 return cluster.eventManager.request({
-                     type: 'CUSTOM',
-                     data: data
-                 }, 5000)
-             } else {
-                 return Promise.reject(new Error(`Cluster is not here. Cluster ID: ${clusterID}`));
-             }
-        } else if(message.type == 'CLUSTER_HEARTBEAT'){
+            if (cluster) {
+                return cluster.eventManager.request({
+                    type: 'CUSTOM',
+                    data: data
+                }, 5000)
+            } else {
+                return Promise.reject(new Error(`Cluster is not here. Cluster ID: ${clusterID}`));
+            }
+        } else if (message.type == 'CLUSTER_HEARTBEAT') {
             const clusterID = message.data.clusterID;
             const cluster = this.clusters.get(clusterID);
             if (cluster) {
@@ -288,7 +290,7 @@ export class ManagedInstance extends BotInstance {
             } else {
                 return Promise.reject(new Error(`Cluster is not here. Cluster ID: ${clusterID}`));
             }
-        } else if(message.type == 'BROADCAST_EVAL') {
+        } else if (message.type == 'BROADCAST_EVAL') {
             return Promise.all(this.clusters.values().filter(c => c.status == 'running').map(c => {
                 return c.eventManager.request({
                     type: 'BROADCAST_EVAL',
@@ -305,5 +307,4 @@ export class ManagedInstance extends BotInstance {
             type: 'INSTANCE_STOP'
         });
     }
-
 }

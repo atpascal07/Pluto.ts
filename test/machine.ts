@@ -51,7 +51,7 @@ machine.on("INSTANCE_STOP", () => {
     console.log("Instance stop requested")
 })
 
-machine.on("INSTANCE_STOPPED", () => {
+machine.on("INSTANCE_DISCONNECTED", () => {
     console.log("Instance stopped")
 })
 

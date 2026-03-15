@@ -1,16 +1,16 @@
 import {EventManager} from "../general/EventManager";
 import {Connection} from "net-ipc";
 
-export enum BridgeHostConnectionStatus {
+export enum BridgeInstanceConnectionStatus {
     READY = 'ready',
     PENDING_STOP = 'pending_stop',
 }
-export class BridgeHostConnection {
+export class BridgeInstanceConnection {
     public readonly instanceID: number;
     public readonly eventManager: EventManager;
     public readonly connection: Connection;
     public readonly data: unknown;
-    public connectionStatus: BridgeHostConnectionStatus = BridgeHostConnectionStatus.READY;
+    public connectionStatus: BridgeInstanceConnectionStatus = BridgeInstanceConnectionStatus.READY;
     public readonly dev: boolean = false;
     public readonly establishedAt: number = Date.now();
 

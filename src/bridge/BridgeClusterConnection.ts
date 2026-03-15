@@ -1,4 +1,4 @@
-import {BridgeHostConnection} from "./BridgeHostConnection";
+import {BridgeInstanceConnection} from "./BridgeInstanceConnection";
 
 export enum BridgeClusterConnectionStatus {
     REQUESTING = 'requesting',
@@ -13,9 +13,9 @@ export class BridgeClusterConnection {
     public readonly shardList: number[];
     public connectionStatus: BridgeClusterConnectionStatus = BridgeClusterConnectionStatus.DISCONNECTED;
 
-    public connection?: BridgeHostConnection;
+    public connection?: BridgeInstanceConnection;
 
-    public oldConnection?: BridgeHostConnection;
+    public oldConnection?: BridgeInstanceConnection;
 
     public missedHeartbeats: number = 0;
 
@@ -30,7 +30,7 @@ export class BridgeClusterConnection {
         this.shardList = shardList;
     }
 
-    setConnection(connection?: BridgeHostConnection): void {
+    setConnection(connection?: BridgeInstanceConnection): void {
         if(connection == undefined){
             this.connectionStatus = BridgeClusterConnectionStatus.DISCONNECTED;
             this.connection = undefined;
@@ -45,7 +45,7 @@ export class BridgeClusterConnection {
         this.connection = connection;
     }
 
-    setOldConnection(connection?: BridgeHostConnection): void {
+    setOldConnection(connection?: BridgeInstanceConnection): void {
         this.oldConnection = connection;
     }
 
@@ -53,7 +53,7 @@ export class BridgeClusterConnection {
         return this.connection != undefined && this.connectionStatus !== BridgeClusterConnectionStatus.DISCONNECTED;
     }
 
-    reclustering(connection: BridgeHostConnection): void {
+    reclustering(connection: BridgeInstanceConnection): void {
         this.connectionStatus = BridgeClusterConnectionStatus.RECLUSTERING;
         this.oldConnection = this.connection;
         this.connection = connection;

@@ -32,7 +32,7 @@ export abstract class BotInstance {
         'BRIDGE_CONNECTION_CLOSED': undefined,
         'BRIDGE_CONNECTION_STATUS_CHANGE': undefined,
         'INSTANCE_STOP': undefined,
-        'INSTANCE_STOPPED': undefined,
+        'INSTANCE_DISCONNECTED': undefined,
         'SELF_CHECK_SUCCESS': undefined,
         'SELF_CHECK_ERROR': undefined,
         'SELF_CHECK_RECEIVED': undefined,
@@ -198,7 +198,7 @@ export type BotInstanceEventListeners = {
     'BRIDGE_CONNECTION_CLOSED': ((reason: string) => void) | undefined,
     'BRIDGE_CONNECTION_STATUS_CHANGE': ((status: number) => void) | undefined,
     'INSTANCE_STOP': (() => void) | undefined,
-    'INSTANCE_STOPPED': (() => void) | undefined,
+    'INSTANCE_DISCONNECTED': (() => void) | undefined,
 
     'SELF_CHECK_SUCCESS': (() => void) | undefined,
     'SELF_CHECK_ERROR': ((error: string) => void) | undefined,
