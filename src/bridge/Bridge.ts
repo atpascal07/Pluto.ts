@@ -365,7 +365,7 @@ export class Bridge {
         });
         if(this.eventMap.INSTANCE_STOP_ACK) this.eventMap.INSTANCE_STOP_ACK(bridgeInstanceConnection);
 
-        if (recluster) {
+        if (recluster && this.connectedInstances.size > 1) {
             while ((clusterToStealConnection = this.clusterCalculator.getClusterForConnection(bridgeInstanceConnection).filter(c =>
                 c.connectionStatus === BridgeClusterConnectionStatus.CONNECTED ||
                 c.connectionStatus == BridgeClusterConnectionStatus.STARTING ||
@@ -398,7 +398,7 @@ export class Bridge {
                 this.createCluster(least, clusterToStealConnection, true);
             }
 
-            return new Promise<void>((resolve, reject) => {
+            return new Promise<void>((resolve) => {
                 const interval = setInterval(async () => {
                     const cluster = this.clusterCalculator.getOldClusterForConnection(bridgeInstanceConnection)[0] || undefined;
                     if (!cluster) {
@@ -417,15 +417,18 @@ export class Bridge {
             this.clusterCalculator.getClusterForConnection(bridgeInstanceConnection).forEach(cluster => {
                 cluster.connection = undefined;
                 cluster.connectionStatus = BridgeClusterConnectionStatus.DISCONNECTED;
+                if (this.eventMap.CLUSTER_STOPPED) this.eventMap.CLUSTER_STOPPED(cluster);
             });
 
             await bridgeInstanceConnection.eventManager.send({
                 type: 'INSTANCE_STOP'
             });
-            if(this.eventMap.INSTANCE_STOP) this.eventMap.INSTANCE_STOP(bridgeInstanceConnection);
-            if(this.eventMap.INSTANCE_DISCONNECTED) this.eventMap.INSTANCE_DISCONNECTED(bridgeInstanceConnection, "Instance stopped.");
 
+            if(this.eventMap.INSTANCE_STOP) this.eventMap.INSTANCE_STOP(bridgeInstanceConnection);
+
+            this.connectedInstances.delete(bridgeInstanceConnection.connection.id);
             await bridgeInstanceConnection.connection.close("Instance stopped.", true);
+            if(this.eventMap.INSTANCE_DISCONNECTED) this.eventMap.INSTANCE_DISCONNECTED(bridgeInstanceConnection, "Instance stopped.");
         }
     }
 
