@@ -19,7 +19,7 @@
   "author": "GalaxyBot",
   "license": "MIT",
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "test:cluster": "tsc && node dist/test/cluster.js",
     "test:bot": "node dist/test/bot.js",
     "test:bridge": "tsc && node dist/test/bridge.js"
@@ -36,7 +36,7 @@
     "net-ipc": "^2.2.2"
   },
   "devDependencies": {
-    "tsup": "^8.5.1",
+    "tsdown": "^0.21.4",
     "typescript": "^5.9.3"
   },
   "repository": {
