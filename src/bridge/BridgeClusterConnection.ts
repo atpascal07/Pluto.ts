@@ -23,9 +23,9 @@ export class BridgeClusterConnection {
 
     public heartbeatPending = false;
 
-    public startedAt?: number;
+    public readyAt?: number;
 
-    public startingAt?: number;
+    public spawnedAt?: number;
 
     constructor(clusterID: number, shardList: number[]) {
         this.clusterID = clusterID;

@@ -188,7 +188,7 @@ export class Bridge {
                     const cluster = this.clusterCalculator.getClusterForConnection(bridgeInstanceConnection).find(c => c.clusterID === m.data.id);
                     if (cluster) {
                         cluster.connectionStatus = BridgeClusterConnectionStatus.STARTING;
-                        cluster.startingAt = Date.now()
+                        cluster.spawnedAt = Date.now()
                     }
                     return;
                 }
@@ -196,11 +196,11 @@ export class Bridge {
                 if (m.type == 'CLUSTER_READY') {
                     const cluster = this.clusterCalculator.getClusterForConnection(bridgeInstanceConnection).find(c => c.clusterID === m.data.id);
                     if (cluster) {
-                        cluster.startedAt = Date.now();
-                        const startupTimeMs = cluster.startedAt - cluster.startingAt!;
-                        cluster.startingAt = undefined
+                        cluster.readyAt = Date.now();
+                        const readyDuration = cluster.readyAt - cluster.spawnedAt!;
+                        cluster.spawnedAt = undefined
 
-                        if (this.eventMap.CLUSTER_READY) this.eventMap.CLUSTER_READY(cluster, m.data.guilds || 0, m.data.members || 0, startupTimeMs);
+                        if (this.eventMap.CLUSTER_READY) this.eventMap.CLUSTER_READY(cluster, m.data.guilds || 0, m.data.members || 0, readyDuration );
                         cluster.connectionStatus = BridgeClusterConnectionStatus.CONNECTED;
                         if (cluster.oldConnection) {
                             cluster.oldConnection.eventManager.send({
@@ -218,7 +218,7 @@ export class Bridge {
                 if (m.type == 'CLUSTER_STOPPED') {
                     const cluster = this.clusterCalculator.getClusterForConnection(bridgeInstanceConnection).find(c => c.clusterID === m.data.id);
                     if (cluster) {
-                        cluster.startedAt = undefined;
+                        cluster.readyAt = undefined;
                         if (this.eventMap.CLUSTER_STOPPED) this.eventMap.CLUSTER_STOPPED(cluster);
                         cluster.setConnection(undefined);
                     }
@@ -451,7 +451,7 @@ export class Bridge {
 }
 
 export type BridgeEventListeners = {
-    'CLUSTER_READY': ((cluster: BridgeClusterConnection, guilds: number, members: number, startingDuration: number) => void) | undefined,
+    'CLUSTER_READY': ((cluster: BridgeClusterConnection, guilds: number, members: number, readyDuration: number) => void) | undefined,
     'CLUSTER_STOPPED': ((cluster: BridgeClusterConnection) => void) | undefined,
     'CLUSTER_SPAWNED': ((cluster: BridgeClusterConnection, connection: BridgeInstanceConnection) => void) | undefined,
     'CLUSTER_RECLUSTER': ((cluster: BridgeClusterConnection, newConnection: BridgeInstanceConnection, oldConnection: BridgeInstanceConnection) => void) | undefined,
