@@ -25,6 +25,8 @@ export class BridgeClusterConnection {
 
     public startedAt?: number;
 
+    public startingAt?: number;
+
     constructor(clusterID: number, shardList: number[]) {
         this.clusterID = clusterID;
         this.shardList = shardList;

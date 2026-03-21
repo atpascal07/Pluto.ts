@@ -188,6 +188,7 @@ export class Bridge {
                     const cluster = this.clusterCalculator.getClusterForConnection(bridgeInstanceConnection).find(c => c.clusterID === m.data.id);
                     if (cluster) {
                         cluster.connectionStatus = BridgeClusterConnectionStatus.STARTING;
+                        cluster.startingAt = Date.now()
                     }
                     return;
                 }
@@ -196,7 +197,10 @@ export class Bridge {
                     const cluster = this.clusterCalculator.getClusterForConnection(bridgeInstanceConnection).find(c => c.clusterID === m.data.id);
                     if (cluster) {
                         cluster.startedAt = Date.now();
-                        if (this.eventMap.CLUSTER_READY) this.eventMap.CLUSTER_READY(cluster, m.data.guilds || 0, m.data.members || 0);
+                        const startupTimeMs = cluster.startedAt - cluster.startingAt!;
+                        cluster.startingAt = undefined
+
+                        if (this.eventMap.CLUSTER_READY) this.eventMap.CLUSTER_READY(cluster, m.data.guilds || 0, m.data.members || 0, startupTimeMs);
                         cluster.connectionStatus = BridgeClusterConnectionStatus.CONNECTED;
                         if (cluster.oldConnection) {
                             cluster.oldConnection.eventManager.send({
@@ -447,7 +451,7 @@ export class Bridge {
 }
 
 export type BridgeEventListeners = {
-    'CLUSTER_READY': ((cluster: BridgeClusterConnection, guilds: number, members: number) => void) | undefined,
+    'CLUSTER_READY': ((cluster: BridgeClusterConnection, guilds: number, members: number, startingDuration: number) => void) | undefined,
     'CLUSTER_STOPPED': ((cluster: BridgeClusterConnection) => void) | undefined,
     'CLUSTER_SPAWNED': ((cluster: BridgeClusterConnection, connection: BridgeInstanceConnection) => void) | undefined,
     'CLUSTER_RECLUSTER': ((cluster: BridgeClusterConnection, newConnection: BridgeInstanceConnection, oldConnection: BridgeInstanceConnection) => void) | undefined,
