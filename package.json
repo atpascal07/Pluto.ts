@@ -24,9 +24,9 @@
     "test:bot": "node dist/test/bot.js",
     "test:bridge": "tsc && node dist/test/bridge.js"
   },
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.cjs",
+  "types": "./dist/index.d.cts",
   "files": [
     "dist"
   ],
