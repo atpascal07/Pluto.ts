@@ -1,4 +1,4 @@
-import {Cluster} from "../src";
+import {Cluster} from "../";
 import {Client, ClientOptions} from "discord.js";
 
 export class ExtendedClient extends Client {
@@ -18,7 +18,9 @@ const client = new ExtendedClient({
      shardCount: cluster.totalShards,
      intents: cluster.intents,
 }, cluster);
+
 cluster.client = client;
+
 client.login(cluster.token).then(r => {
      cluster.triggerReady(client.guilds.cache.size, client.guilds.cache.values().map(g => g.memberCount).reduce((a, b) => a + b, 0));
 

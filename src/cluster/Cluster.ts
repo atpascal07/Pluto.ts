@@ -21,6 +21,8 @@ export class Cluster<T extends Client> {
 
     public onSelfDestruct?: () => void | Promise<void>;
 
+    private _shuttingDown = false;
+
     private readonly eventMap: {
         'message': ((message: unknown) => void) | undefined,
         'request': ((message: unknown, resolve: (data: unknown) => void, reject: (error: any) => void) => void) | undefined,
@@ -61,6 +63,8 @@ export class Cluster<T extends Client> {
         })
 
         const gracefulExit = async () => {
+            if (this._shuttingDown) return;
+            this._shuttingDown = true;
             if (this.onSelfDestruct) {
                 await Promise.resolve(this.onSelfDestruct());
             }
@@ -199,11 +203,14 @@ export class Cluster<T extends Client> {
             }
         } else if(m.type == 'SELF_DESTRUCT') {
             return new Promise<void>(async (resolve) => {
-                if (this.onSelfDestruct) {
-                    await Promise.resolve(this.onSelfDestruct());
-                }
-                if (this.client) {
-                    try { this.client.destroy(); } catch {}
+                if (!this._shuttingDown) {
+                    this._shuttingDown = true;
+                    if (this.onSelfDestruct) {
+                        await Promise.resolve(this.onSelfDestruct());
+                    }
+                    if (this.client) {
+                        try { this.client.destroy(); } catch {}
+                    }
                 }
                 resolve();
                 setTimeout(() => process.exit(0), 500);

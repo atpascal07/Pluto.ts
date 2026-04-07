@@ -34,12 +34,6 @@ export class EventManager {
         const id = crypto.randomUUID();
 
         return new Promise<T>((resolve, reject) => {
-            this._send({
-                id: id,
-                type: 'request',
-                data: payload
-            });
-
             this.pendingPayloads.set(id, {
                 resolve: resolve as (value: unknown) => void,
                 reject
@@ -55,6 +49,20 @@ export class EventManager {
                 }
             }, timeout);
             this.pendingTimeouts.set(id, t);
+
+            this._send({
+                id: id,
+                type: 'request',
+                data: payload
+            }).catch((err) => {
+                if (this.pendingPayloads.has(id)) {
+                    const to = this.pendingTimeouts.get(id);
+                    if (to) clearTimeout(to);
+                    this.pendingTimeouts.delete(id);
+                    this.pendingPayloads.delete(id);
+                    reject(err);
+                }
+            });
         })
     }
 
@@ -109,20 +117,20 @@ export class EventManager {
                         id: payload.id,
                         type: 'response',
                         data: result
-                    });
+                    }).catch(() => {});
                 }).catch((error) => {
                     this._send({
                         id: payload.id,
                         type: 'response_error',
                         data: error
-                    });
+                    }).catch(() => {});
                 });
             } else {
                 this._send({
                     id: payload.id,
                     type: 'response',
                     data: data
-                });
+                }).catch(() => {});
             }
             return;
         }
