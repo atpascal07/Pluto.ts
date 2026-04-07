@@ -16,6 +16,7 @@ galactic allows you to run multiple Discord shards within a single process and s
 - Easy configuration and setup
 - Open-source and actively maintained
 - Reclustering without downtime
+- Graceful shutdown with async cleanup callbacks
 
 ## Installation
 
@@ -29,7 +30,8 @@ yarn add galactic.ts
 
 ### Standalone Setup (Single Machine)
 
-```ts filename="index.ts"
+```ts
+// index.ts
 import { StandaloneInstance } from "galactic.ts";
 
 // Create a standalone instance running 2 clusters with 2 shards each
@@ -46,7 +48,8 @@ instance.start();
 
 ### Bot File Setup
 
-```ts filename="bot.ts"
+```ts
+// bot.ts
 import { Cluster } from "galactic.ts";
 import { Client, ClientOptions } from "discord.js";
 
@@ -75,6 +78,38 @@ const client = new ExtendedClient(
 cluster.client = client;
 
 client.login(cluster.token);
+```
+
+## Graceful Shutdown
+
+`StandaloneInstance` exposes a `shutdown()` method that gracefully stops all clusters before the process exits. It sends each cluster a destruct signal, awaits its cleanup callback, and only resolves once every child process has fully terminated.
+
+```ts
+// index.ts
+import { StandaloneInstance } from "galactic.ts";
+
+const instance = new StandaloneInstance(
+  `${__dirname}/bot.js`,
+  2,
+  2,
+  process.env.BOT_TOKEN!,
+  [],
+);
+
+instance.start();
+
+// Wire up OS signals for clean shutdown
+process.on("SIGTERM", () => instance.shutdown().then(() => process.exit(0)));
+process.on("SIGINT", () => instance.shutdown().then(() => process.exit(0)));
+```
+
+To run custom cleanup logic per cluster (e.g. destroying a Discord client), set `onSelfDestruct` in your bot file. Async callbacks are fully awaited before the cluster exits:
+
+```ts
+// bot.ts
+cluster.onSelfDestruct = async () => {
+  await client.destroy();
+};
 ```
 
 ## Distributed Setup
