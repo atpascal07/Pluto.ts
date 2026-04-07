@@ -1,4 +1,4 @@
-import {Cluster} from "../";
+import {Cluster} from "../src";
 import {Client, ClientOptions} from "discord.js";
 
 export class ExtendedClient extends Client {

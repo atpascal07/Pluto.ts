@@ -1,4 +1,4 @@
-import {Bridge} from "../";
+import {Bridge} from "../src";
 
 import dotenv from "dotenv";
 
