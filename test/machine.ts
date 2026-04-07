@@ -14,7 +14,6 @@ machine.on("BRIDGE_CONNECTION_ESTABLISHED", () => {
     console.log("Bridge connected")
 })
 
-
 machine.on("CLUSTER_READY", () => {
     console.log("ready")
 })

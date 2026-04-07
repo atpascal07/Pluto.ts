@@ -35,6 +35,12 @@ client.login(cluster.token).then(r => {
      cluster.triggerError(e);
 })
 
+cluster.onSelfDestruct = async () => {
+     console.log(`[Cluster ${cluster.clusterID}] Graceful shutdown started`);
+     await client.destroy();
+     console.log(`[Cluster ${cluster.clusterID}] Discord client destroyed`);
+};
+
 cluster.on('message', (message) => {
 
 })

@@ -42,7 +42,14 @@ export class StandaloneInstance extends BotInstance {
 
     protected setClusterStopped(clusterProcess: ClusterProcess, reason: string): void {
         this.clusters.delete(clusterProcess.id);
-        this.restartProcess(clusterProcess);
+        if (!this._shuttingDown) {
+            this.restartProcess(clusterProcess);
+        }
+    }
+
+    public async shutdown(): Promise<void> {
+        this._shuttingDown = true;
+        await Promise.all(Array.from(this.clusters.values()).map(c => this.killProcess(c, 'Graceful shutdown')));
     }
 
     protected setClusterReady(clusterProcess: ClusterProcess): void {

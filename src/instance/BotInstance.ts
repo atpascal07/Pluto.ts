@@ -11,6 +11,8 @@ export abstract class BotInstance {
 
     public readonly clusters: Map<number, ClusterProcess> = new Map();
 
+    protected _shuttingDown = false;
+
     protected constructor(entryPoint: string, execArgv?: string[]) {
         this.entryPoint = entryPoint;
         this.execArgv = execArgv ?? [];
@@ -97,10 +99,10 @@ export abstract class BotInstance {
         }
     }
 
-    protected killProcess(client: ClusterProcess, reason: string): void {
+    protected async killProcess(client: ClusterProcess, reason: string): Promise<unknown> {
         client.status = 'stopped';
 
-        client.eventManager.request({
+        return client.eventManager.request({
             type: 'SELF_DESTRUCT',
             reason: reason
         }, 5000).catch(() => {
