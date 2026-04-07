@@ -24,9 +24,6 @@
     "test:bot": "node dist/test/bot.js",
     "test:bridge": "tsc && node dist/test/bridge.js"
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.cjs",
-  "types": "./dist/index.d.cts",
   "files": [
     "dist"
   ],
@@ -46,5 +43,15 @@
   "bugs": {
     "url": "https://github.com/GalaxyBotTeam/galactic.ts/issues"
   },
-  "homepage": "https://galaxybot.app"
+  "homepage": "https://galaxybot.app",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  }
 }
