@@ -53,3 +53,21 @@ Additionally, several unhandled-rejection crashes lurked in the IPC layer: if a 
 #### `test/sa.machine.ts`
 
 - `gracefulShutdown()` wired to `SIGTERM`, `SIGINT`, and the `stop` stdin command — calls `machine.shutdown()` and exits after all clusters stop.
+
+---
+
+## Fix: out-of-order terminal output on graceful shutdown
+
+### Why
+
+After a graceful shutdown, child process log lines (e.g. `[Cluster N] Discord client destroyed`) appeared **after** the shell prompt had already returned. `killProcess()` resolved as soon as it received the SELF_DESTRUCT IPC response — but the child process had not yet exited at that point. The 500 ms `setTimeout` in the child was there to let the IPC response travel before dying, meaning the parent could call `process.exit(0)` while children were still alive. Because `stdio: 'inherit'` is used, their remaining stdout flushed directly to the terminal after the prompt.
+
+### Changes
+
+#### `src/instance/BotInstance.ts`
+
+- `killProcess` now waits for the child's `exit` event after the SELF_DESTRUCT handshake (and SIGKILL fallback) before resolving. `machine.shutdown()` therefore only completes once every child process has fully terminated and flushed its stdout.
+
+#### `src/cluster/Cluster.ts`
+
+- Removed the 500 ms artificial delay before `process.exit(0)` in the SELF_DESTRUCT handler. It was only needed to give the IPC response time to reach the parent before the child died; since the parent now awaits actual process exit, the delay is no longer necessary.

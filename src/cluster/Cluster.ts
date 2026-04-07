@@ -213,7 +213,7 @@ export class Cluster<T extends Client> {
                     }
                 }
                 resolve();
-                setTimeout(() => process.exit(0), 500);
+                process.exit(0);
             });
         }
         return undefined;

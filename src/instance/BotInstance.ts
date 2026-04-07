@@ -121,7 +121,10 @@ export abstract class BotInstance {
             }
             this.clusters.delete(client.id);
             this.setClusterStopped(client, reason);
-        })
+        }).then(() => new Promise<void>((res) => {
+            if (!client.child || client.child.exitCode !== null) return res();
+            client.child.once('exit', () => res());
+        }))
     }
 
     protected abstract setClusterStopped(clusterProcess: ClusterProcess, reason: string): void;
