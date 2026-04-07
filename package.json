@@ -20,8 +20,8 @@
   "license": "MIT",
   "scripts": {
     "build": "tsdown",
-    "test:cluster": "tsc && node dist/test/cluster.js",
-    "test:bot": "node dist/test/bot.js",
+    "test:cluster": "tsc && node dist/test/machine.js",
+    "test:bot": "tsc && node dist/test/bot.js",
     "test:bridge": "tsc && node dist/test/bridge.js"
   },
   "files": [
