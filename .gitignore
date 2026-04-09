@@ -13,3 +13,7 @@ yarn-error.log*
 
 .npmrc
 /.idea
+
+.env
+.env.*
+!.env.example

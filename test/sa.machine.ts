@@ -3,12 +3,10 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-console.log(`${__dirname}\\bot.js`)
-
 const machine = new StandaloneInstance(
-  `${__dirname}/bot.js`,
-   2, 2, process.env.TEST_SA_BOT_TOKEN!
-, []);
+  `${__dirname}/bot.ts`,
+  2, 2, process.env.TEST_SA_BOT_TOKEN!, [],
+  ['--import', 'tsx']);
 
 machine.start();
 
@@ -62,6 +60,17 @@ machine.on("SELF_CHECK_ERROR", (error) => {
     console.error("Self check failed", error);
 });
 
+const gracefulShutdown = () => {
+    console.log('Shutting down all clusters...');
+    machine.shutdown().then(() => {
+        console.log('All clusters stopped.');
+        process.exit(0);
+    });
+};
+
+process.once('SIGTERM', gracefulShutdown);
+process.once('SIGINT', gracefulShutdown);
+
 // on command input
 
 process.stdin.resume();
@@ -78,6 +87,6 @@ process.stdin.on('data', async function (text: Buffer) {
            console.error(err);
         });
     } else if(input == 'stop'){
-        //machine.stopInstance();
+        gracefulShutdown();
     }
 });

@@ -19,7 +19,9 @@ export class Cluster<T extends Client> {
 
     public client!: T;
 
-    public onSelfDestruct?: () => void;
+    public onSelfDestruct?: () => void | Promise<void>;
+
+    private _shuttingDown = false;
 
     private readonly eventMap: {
         'message': ((message: unknown) => void) | undefined,
@@ -59,6 +61,20 @@ export class Cluster<T extends Client> {
         process.on("message", (message) => {
             this.eventManager.receive(message);
         })
+
+        const gracefulExit = async () => {
+            if (this._shuttingDown) return;
+            this._shuttingDown = true;
+            if (this.onSelfDestruct) {
+                await Promise.resolve(this.onSelfDestruct());
+            }
+            if (this.client) {
+                try { this.client.destroy(); } catch {}
+            }
+            process.exit(0);
+        };
+        process.once('SIGTERM', gracefulExit);
+        process.once('SIGINT', gracefulExit);
     }
 
     static initial<T extends Client>(): Cluster<T> {
@@ -186,9 +202,19 @@ export class Cluster<T extends Client> {
                 return result;
             }
         } else if(m.type == 'SELF_DESTRUCT') {
-            if(this.onSelfDestruct) {
-                this.onSelfDestruct();
-            }
+            return new Promise<void>(async (resolve) => {
+                if (!this._shuttingDown) {
+                    this._shuttingDown = true;
+                    if (this.onSelfDestruct) {
+                        await Promise.resolve(this.onSelfDestruct());
+                    }
+                    if (this.client) {
+                        try { this.client.destroy(); } catch {}
+                    }
+                }
+                resolve();
+                process.exit(0);
+            });
         }
         return undefined;
     }

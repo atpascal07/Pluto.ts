@@ -18,7 +18,9 @@ const client = new ExtendedClient({
      shardCount: cluster.totalShards,
      intents: cluster.intents,
 }, cluster);
+
 cluster.client = client;
+
 client.login(cluster.token).then(r => {
      cluster.triggerReady(client.guilds.cache.size, client.guilds.cache.values().map(g => g.memberCount).reduce((a, b) => a + b, 0));
 
@@ -34,6 +36,12 @@ client.login(cluster.token).then(r => {
      console.error('Failed to login:', e);
      cluster.triggerError(e);
 })
+
+cluster.onSelfDestruct = async () => {
+     console.log(`[Cluster ${cluster.clusterID}] Graceful shutdown started`);
+     await client.destroy();
+     console.log(`[Cluster ${cluster.clusterID}] Discord client destroyed`);
+};
 
 cluster.on('message', (message) => {
 
