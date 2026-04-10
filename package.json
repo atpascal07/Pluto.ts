@@ -20,10 +20,13 @@
   "license": "MIT",
   "scripts": {
     "build": "tsdown",
-    "test:cluster": "npm run build && npx tsx test/machine.ts",
-    "test:bot": "npx tsx test/bot.ts",
-    "test:bridge": "npm run build && npx tsx test/bridge.ts",
-    "test:sa": "npm run build && npx tsx test/sa.machine.ts"
+    "test:cluster": "bun run build && bunx test/machine.ts",
+    "test:bot": "bunx test/bot.ts",
+    "test:bridge": "bun run build && bunx test/bridge.ts",
+    "test:sa": "bun run build && bunx test/sa.machine.ts",
+    "lint": "bunx eslint ./src",
+    "lint:fix": "bunx eslint ./src --fix",
+    "typecheck": "bunx tsc --noEmit"
   },
   "files": [
     "dist"
