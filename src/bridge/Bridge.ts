@@ -412,6 +412,8 @@ export class Bridge {
                             type: 'INSTANCE_STOP'
                         });
                         if (this.eventMap.INSTANCE_STOP) this.eventMap.INSTANCE_STOP(bridgeInstanceConnection);
+                        
+                        this.connectedInstances.delete(bridgeInstanceConnection.connection.id);
                         await bridgeInstanceConnection.connection.close("Instance stopped.", false);
                         resolve();
                         return;
