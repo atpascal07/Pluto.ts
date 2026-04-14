@@ -14,6 +14,19 @@ export class Bridge {
 
     private readonly totalShards: number;
 
+    private readonly eventMap: BridgeEventListeners = {
+        CLUSTER_READY: undefined,
+        CLUSTER_HEARTBEAT_FAILED: undefined,
+        CLUSTER_STOPPED: undefined,
+        CLUSTER_SPAWNED: undefined,
+        CLUSTER_RECLUSTER: undefined,
+        INSTANCE_CONNECTED: undefined,
+        INSTANCE_DISCONNECTED: undefined,
+        INSTANCE_STOP_ACK: undefined,
+        INSTANCE_STOP: undefined,
+        ERROR: undefined
+    }
+
     constructor(serverOptions: ServerOptions, clientOptions: BridgeClusterClientOptions, shardsPerCluster: number, clusterToStart: number, reclusteringTimeoutInMs: number) {
         this.server = new Server(serverOptions);
         this.clientOptions = clientOptions
@@ -37,7 +50,7 @@ export class Bridge {
         setInterval(() => {
             const unconnected = this.getUnconnectedCluster()
             if (unconnected.length > 0) {
-                const instance = ClusterUtil.getInstanceWithLowestLoad(this.instances)
+                const instance = ClusterUtil.getInstanceWithLowestLoad(this.instances, this.clusters)
                 if(instance) {
                     console.log("start", instance.id, unconnected[0].id)
                     this.start(instance, unconnected[0])
@@ -56,6 +69,7 @@ export class Bridge {
                 }
                 const instance = new BridgeInstance(payload.data.id, connection, payload.data.dev, payload.data.data);
                 this._instances.push(instance);
+                if (this.eventMap.INSTANCE_CONNECTED) this.eventMap.INSTANCE_CONNECTED(instance);
             } else {
                 connection.close("Invalid payload", false)
             }
@@ -66,19 +80,24 @@ export class Bridge {
             if(!instance) {
                 return
             }
-
-            instance.clusters.forEach(cluster => {
-                cluster.instance = undefined;
-            })
-            this.removeInstance(instance)
+            this.stopInstance(instance, reason)
         })
     }
 
-    removeInstance(instance: BridgeInstance) {
+    getClusterForInstance(instance: BridgeInstance) {
+        return this._clusters.filter(c => c.instance === instance)
+    }
+
+    stopInstance(instance: BridgeInstance, reason: string) {
+        this.getClusterForInstance(instance).forEach(cluster => {
+            cluster.forceStop()
+        })
+
         const index = this._instances.indexOf(instance);
         if (index !== -1) {
             this._instances.splice(index, 1);
         }
+        if (this.eventMap.INSTANCE_DISCONNECTED) this.eventMap.INSTANCE_DISCONNECTED(instance, reason);
     }
 
     get clusters() {
@@ -104,6 +123,11 @@ export class Bridge {
                 totalShards: this.totalShards,
             }
         });
+        if (this.eventMap.CLUSTER_SPAWNED) this.eventMap.CLUSTER_SPAWNED(cluster, instance);
+    }
+
+    public on<K extends keyof BridgeEventListeners>(event: K, listener: BridgeEventListeners[K]): void {
+        this.eventMap[event] = listener;
     }
 }
 
@@ -133,3 +157,16 @@ export const BridgeClusterEventCreateCluster = z.object({
 })
 
 export type BridgeClusterEventCreateCluster = z.infer<typeof BridgeClusterEventCreateCluster>
+
+export type BridgeEventListeners = {
+    'CLUSTER_READY': ((cluster: BridgeCluster, guilds: number, members: number, readyDuration: number) => void) | undefined,
+    'CLUSTER_STOPPED': ((cluster: BridgeCluster) => void) | undefined,
+    'CLUSTER_SPAWNED': ((cluster: BridgeCluster, connection: BridgeInstance) => void) | undefined,
+    'CLUSTER_RECLUSTER': ((cluster: BridgeCluster, newConnection: BridgeInstance, oldConnection: BridgeInstance) => void) | undefined,
+    'CLUSTER_HEARTBEAT_FAILED': ((cluster: BridgeCluster, error: unknown) => void) | undefined,
+    'INSTANCE_CONNECTED': ((client: BridgeInstance) => void) | undefined,
+    'INSTANCE_DISCONNECTED': ((client: BridgeInstance, reason: string) => void) | undefined,
+    'INSTANCE_STOP_ACK': ((cluster: BridgeInstance) => void) | undefined,
+    'INSTANCE_STOP': ((cluster: BridgeInstance) => void) | undefined,
+    'ERROR': ((error: string) => void) | undefined,
+};

@@ -1,5 +1,3 @@
-import {BridgeOld} from "../src";
-
 import dotenv from "dotenv";
 import {Bridge} from "../src/bridge/Bridge";
 
@@ -19,6 +17,26 @@ const bridge = new Bridge({
     , 2,
     Number.parseInt(process.env.RECLUSTERING_TIMEOUT_IN_MS!)
 )
+
+bridge.on('CLUSTER_READY', (client) => {
+    console.log(`Cluster ${client.id} is ready with shards: ${client.shards.map(s => s.id).join(', ')}`);
+});
+bridge.on('CLUSTER_STOPPED', (client) => {
+    console.log(`Cluster stopped ${client.id}`);
+});
+
+bridge.on('CLUSTER_SPAWNED', (client) => {
+    console.log(`Cluster spawned ${client.id}`);
+});
+
+bridge.on('INSTANCE_DISCONNECTED', (client) => {
+    console.log(`Instance disconnected ${client.id}`);
+})
+
+bridge.on('INSTANCE_CONNECTED', (client) => {
+    console.log(`Instance connected ${client.id}`);
+})
+
 
 /**
  *

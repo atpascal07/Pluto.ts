@@ -1,8 +1,3 @@
-export * from './bridge/BridgeClusterConnection';
-export * from './bridge/BridgeInstanceConnection';
-export * from './bridge/BridgeOld';
-export * from './bridge/ClusterCalculator';
-
 export * from './cluster/Cluster';
 export * from './instance/cluster/ClusterProcess';
 

@@ -1,6 +1,5 @@
 import {BridgeCluster, BridgeClusterStatus} from "../bridge/BridgeCluster";
 import {BridgeClusterShard} from "../bridge/BridgeClusterShard";
-import {BridgeInstanceConnection, BridgeInstanceConnectionStatus} from "../bridge/BridgeInstanceConnection";
 import {BridgeInstance, BridgeInstanceStatus} from "../bridge/BridgeInstance";
 
 export class ClusterUtil {
@@ -20,15 +19,15 @@ export class ClusterUtil {
         return clusters
     }
 
-    static getInstanceWithLowestLoad(instances: BridgeInstance[]): BridgeInstance | undefined {
+    static getInstanceWithLowestLoad(instances: BridgeInstance[], clusters: BridgeCluster[]): BridgeInstance | undefined {
         let lowestLoadClient: BridgeInstance | undefined;
         let lowestLoad = Infinity;
 
         for (const client of instances.filter(i =>
             i.status === BridgeInstanceStatus.READY && !i.dev)) {
-            const clusters = client.clusters
+            const instanceClusters = clusters.filter(c => c.instance?.id === client.id);
 
-            const load = clusters.length; // Assuming load is determined by the number of clusters assigned
+            const load = instanceClusters.length; // Assuming load is determined by the number of clusters assigned
             if (load < lowestLoad) {
                 lowestLoad = load;
                 lowestLoadClient = client;

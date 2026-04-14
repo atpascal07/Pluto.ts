@@ -20,8 +20,8 @@
   "license": "MIT",
   "scripts": {
     "build": "tsdown",
-    "test:cluster": "npm run build && npx tsx test/machine.ts",
-    "test:bot": "npx tsx test/bot.ts",
+    "test:instance": "npm run build && npx tsx test/instance.ts",
+    "test:cluster": "npm run build && npx tsx test/cluster.ts",
     "test:bridge": "npm run build && npx tsx test/bridge.ts",
     "test:sa": "npm run build && npx tsx test/sa.machine.ts"
   },

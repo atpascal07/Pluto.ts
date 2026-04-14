@@ -4,8 +4,8 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const machine = new ManagedInstance(
-  `${__dirname}/bot.ts`,
+const instance = new ManagedInstance(
+  `${__dirname}/cluster.ts`,
   "localhost",
   3000,
   1,
@@ -16,53 +16,53 @@ const machine = new ManagedInstance(
   false,
 );
 
-machine.start();
+instance.start();
 
-machine.on("BRIDGE_CONNECTION_ESTABLISHED", () => {
+instance.on("BRIDGE_CONNECTION_ESTABLISHED", () => {
   console.log("Bridge connected");
 });
 
-machine.on("CLUSTER_READY", () => {
+instance.on("CLUSTER_READY", () => {
   console.log("ready");
 });
 
-machine.on("CLUSTER_RECLUSTER", (client) => {
+instance.on("CLUSTER_RECLUSTER", (client) => {
   console.error("Cluster reclustered", client.id);
 });
 
-machine.on("CLUSTER_ERROR", (error) => {
+instance.on("CLUSTER_ERROR", (error) => {
   console.error("Cluster error", error);
 });
 
-machine.on("ERROR", (error) => {
+instance.on("ERROR", (error) => {
   console.error("Error in instance", error);
 });
 
-machine.on("PROCESS_SPAWNED", (r) => {
+instance.on("PROCESS_SPAWNED", (r) => {
   console.log("Process spawned", r.id);
 });
 
-machine.on("PROCESS_KILLED", (r, reason) => {
+instance.on("PROCESS_KILLED", (r, reason) => {
   console.log("Process killed", r.id, reason);
 });
 
-machine.on("PROCESS_ERROR", (r, error) => {
+instance.on("PROCESS_ERROR", (r, error) => {
   console.error("Process error", r.id, error);
 });
 
-machine.on("BRIDGE_CONNECTION_CLOSED", (r) => {
+instance.on("BRIDGE_CONNECTION_CLOSED", (r) => {
   console.log("Bridge connection closed", r);
 });
 
-machine.on("INSTANCE_STOP", () => {
+instance.on("INSTANCE_STOP", () => {
   console.log("Instance stop requested");
 });
 
-machine.on("SELF_CHECK_SUCCESS", () => {
+instance.on("SELF_CHECK_SUCCESS", () => {
   console.log("Self check successful");
 });
 
-machine.on("SELF_CHECK_ERROR", (error) => {
+instance.on("SELF_CHECK_ERROR", (error) => {
   console.error("Self check failed", error);
 });
 
@@ -74,7 +74,7 @@ process.stdin.on("data", async function (text: Buffer) {
   const input = text.toString().trim();
 
   if (input == "test") {
-    machine
+    instance
       .sendRequestToClusterOfGuild("1297244911787311104", {
         test: "CLI",
       })
@@ -85,7 +85,7 @@ process.stdin.on("data", async function (text: Buffer) {
         console.error(err);
       });
   } else if (input == "stop") {
-    machine.stopInstance();
+    instance.stopInstance();
   }
 });
 

@@ -19,4 +19,9 @@ export class BridgeCluster {
         this.shards = shards;
         this.status = BridgeClusterStatus.DISCONNECTED;
     }
+
+    forceStop() {
+        this.instance = undefined;
+        this.status = BridgeClusterStatus.DISCONNECTED;
+    }
 }

@@ -1,8 +1,6 @@
 import {BridgeCluster} from "./BridgeCluster";
 import {Connection} from "net-ipc";
-import {BridgeConnectionStatus} from "../instance/ManagedInstance";
 import {EventManager} from "../general/EventManager";
-import {BridgeClusterClientOptions} from "./Bridge";
 
 export enum BridgeInstanceStatus {
     READY = 'ready',
@@ -11,7 +9,6 @@ export enum BridgeInstanceStatus {
 
 export class BridgeInstance {
     public readonly id: number;
-    public readonly clusters: BridgeCluster[];
     public status: BridgeInstanceStatus;
     public readonly connection: Connection;
     public readonly eventManager: EventManager;
@@ -23,7 +20,6 @@ export class BridgeInstance {
 
     constructor(id: number, connection: Connection, dev: boolean, data: unknown) {
         this.id = id;
-        this.clusters = [];
         this.status = BridgeInstanceStatus.READY;
         this.connection = connection;
         this.dev = dev;
