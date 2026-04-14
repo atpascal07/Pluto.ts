@@ -90,42 +90,44 @@ export abstract class BotInstance {
                 if(this.eventMap.PROCESS_ERROR) this.eventMap.PROCESS_ERROR(clusterProcess, err);
             })
 
-            childProcess.on("exit", (err: Error) => {
-                if(clusterProcess.status !== 'stopped') {
-                    clusterProcess.status = 'stopped';
-                    this.killProcess(clusterProcess, `Process exited: ${err?.message}`);
-                }
+            childProcess.on("exit", (code: number | null, signal: string | null) => {
+                this.killProcess(clusterProcess, `Process exited: ${code} ${signal}`);
             })
         } catch (error) {
             throw new Error(`Failed to start process for cluster ${clusterID}: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
-    protected async killProcess(client: ClusterProcess, reason: string): Promise<unknown> {
-        client.status = 'stopped';
+    protected async killProcess(clusterProcess: ClusterProcess, reason: string): Promise<unknown> {
+        clusterProcess.status = 'stopped';
 
-        return client.eventManager.request({
+        return clusterProcess.eventManager.request({
             type: 'SELF_DESTRUCT',
             reason: reason
         }, 5000).catch(() => {
-            if(this.eventMap.PROCESS_SELF_DESTRUCT_ERROR) this.eventMap.PROCESS_SELF_DESTRUCT_ERROR(client, reason, 'Cluster didnt respond to shot-call.');
+            if(this.eventMap.PROCESS_SELF_DESTRUCT_ERROR) this.eventMap.PROCESS_SELF_DESTRUCT_ERROR(clusterProcess, reason, 'Cluster didnt respond to shot-call.');
         }).finally(() => {
-            if (client.child && client.child.pid) {
-                if(client.child.kill("SIGKILL")) {
-                    if(this.eventMap.PROCESS_KILLED) this.eventMap.PROCESS_KILLED(client, reason, true);
+            if (clusterProcess.child && clusterProcess.child.pid) {
+                if(clusterProcess.child.kill("SIGKILL")) {
+                    if(this.eventMap.PROCESS_KILLED) this.eventMap.PROCESS_KILLED(clusterProcess, reason, true);
                 } else {
-                    if(this.eventMap.ERROR) this.eventMap.ERROR(`Failed to kill process for cluster ${client.id}`);
-                    client.child.kill("SIGKILL");
+                    if(this.eventMap.ERROR) this.eventMap.ERROR(`Failed to kill process for cluster ${clusterProcess.id}`);
+                    clusterProcess.child.kill("SIGKILL");
                 }
-                try { process.kill(-client.child.pid) } catch {}
+
+                try {
+                    process.kill(-clusterProcess.child.pid)
+                } catch {
+
+                }
             } else {
-                if(this.eventMap.PROCESS_KILLED) this.eventMap.PROCESS_KILLED(client, reason, false);
+                if(this.eventMap.PROCESS_KILLED) this.eventMap.PROCESS_KILLED(clusterProcess, reason, false);
             }
-            this.clusters.delete(client.id);
-            this.setClusterStopped(client, reason);
+            this.clusters.delete(clusterProcess.id);
+            this.setClusterStopped(clusterProcess, reason);
         }).then(() => new Promise<void>((res) => {
-            if (!client.child || client.child.exitCode !== null) return res();
-            client.child.once('exit', () => res());
+            if (!clusterProcess.child || clusterProcess.child.exitCode !== null) return res();
+            clusterProcess.child.once('exit', () => res());
         }))
     }
 
