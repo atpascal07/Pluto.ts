@@ -1,5 +1,5 @@
 import {ChildProcess} from "child_process";
-import {EventManager} from "../general/EventManager";
+import {EventManager} from "../../general/EventManager";
 
 export type ClusterProcessState = 'starting' | 'running' | 'stopped';
 

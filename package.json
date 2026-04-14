@@ -28,8 +28,11 @@
   "files": [
     "dist"
   ],
-  "dependencies": {
+  "peerDependencies": {
     "discord.js": "^14.25.1",
+    "zod": "^4.3.6"
+  },
+  "dependencies": {
     "dotenv": "^17.3.1",
     "net-ipc": "^2.2.2"
   },

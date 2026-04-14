@@ -1,5 +1,5 @@
 import {BotInstance} from "./BotInstance";
-import {ClusterProcess} from "../cluster/ClusterProcess";
+import {ClusterProcess} from "./cluster/ClusterProcess";
 import {GatewayIntentsString} from "discord.js";
 import {ShardingUtil} from "../general/ShardingUtil";
 
