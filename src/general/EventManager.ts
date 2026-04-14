@@ -22,7 +22,7 @@ export class EventManager {
         this._request = request
     }
 
-    async send(data: unknown) {
+    async send<T>(data: T) {
         return this._send({
             id: crypto.randomUUID(),
             type: 'message',

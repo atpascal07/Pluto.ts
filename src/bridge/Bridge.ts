@@ -1,7 +1,7 @@
 import {GatewayIntentsString} from "discord.js";
 import {Server, ServerOptions} from "net-ipc";
 import {BridgeInstance} from "./BridgeInstance";
-import {BridgeCluster} from "./BridgeCluster";
+import {BridgeCluster, BridgeClusterStatus} from "./BridgeCluster";
 import {ClusterUtil} from "../utils/ClusterUtil";
 import {z} from "zod";
 
@@ -91,7 +91,8 @@ export class Bridge {
 
     start(instance: BridgeInstance, cluster: BridgeCluster) {
         cluster.instance = instance;
-        instance.eventManager.send({
+        cluster.status = BridgeClusterStatus.STARTING
+        instance.eventManager.send<BridgeClusterEventCreateCluster>({
             type: 'CLUSTER_CREATE',
             data: {
                 clusterID: cluster.id,
@@ -117,3 +118,18 @@ export const BridgeConnectionPayload = z.object({
     dev: z.boolean(),
     data: z.unknown()
 })
+
+export const BridgeClusterEventCreateCluster = z.object({
+    type: 'CLUSTER_CREATE',
+    data: z.object({
+        clusterID: z.number(),
+        instanceID: z.number(),
+        shardList: z.array(z.number()),
+        token: z.string(),
+        intents: z.array(z.string()),
+        url: z.string().optional(),
+        totalShards: z.number(),
+    })
+})
+
+export type BridgeClusterEventCreateCluster = z.infer<typeof BridgeClusterEventCreateCluster>

@@ -4,6 +4,8 @@ import {Client} from "net-ipc";
 import {EventManager} from "../general/EventManager";
 import {GatewayIntentsString} from "discord.js";
 import {ShardingUtil} from "../general/ShardingUtil";
+import {z} from "zod";
+import {BridgeClusterEventCreateCluster} from "../bridge/Bridge";
 
 export enum BridgeConnectionStatus {
     CONNECTED,
@@ -50,17 +52,19 @@ export class ManagedInstance extends BotInstance {
             }
             return Promise.reject(new Error('Client is not ready to send messages'));
         }, (message) => {
-            const m = message as { type: string, data: unknown };
-            if (m.type == 'CLUSTER_CREATE') {
-                this.onClusterCreate(m.data)
-            } else if (m.type == 'CLUSTER_STOP') {
-                this.onClusterStop(m.data);
-            } else if (m.type == 'CLUSTER_RECLUSTER') {
-                this.onClusterRecluster(m.data);
-            } else if (m.type == 'INSTANCE_STOP_ACK') {
-                if (this.eventMap.INSTANCE_STOP_ACK) this.eventMap.INSTANCE_STOP_ACK();
-            } else if (m.type == 'INSTANCE_STOP') {
-                if (this.eventMap.INSTANCE_STOP) this.eventMap.INSTANCE_STOP();
+            const m = z.object({type: z.string(), data: z.unknown}).safeParse(message);
+            if(m.success){
+                if (m.data.type == 'CLUSTER_CREATE') {
+                    this.onClusterCreate(m.data)
+                } else if (m.data.type == 'CLUSTER_STOP') {
+                    this.onClusterStop(m.data);
+                } else if (m.data.type == 'CLUSTER_RECLUSTER') {
+                    this.onClusterRecluster(m.data);
+                } else if (m.data.type == 'INSTANCE_STOP_ACK') {
+                    if (this.eventMap.INSTANCE_STOP_ACK) this.eventMap.INSTANCE_STOP_ACK();
+                } else if (m.data.type == 'INSTANCE_STOP') {
+                    if (this.eventMap.INSTANCE_STOP) this.eventMap.INSTANCE_STOP();
+                }
             }
         }, (message) => {
             return this.onBridgeRequest(message);
@@ -184,19 +188,16 @@ export class ManagedInstance extends BotInstance {
     }
 
     private onClusterCreate(message: unknown) {
-        const m = message as {
-            clusterID: number,
-            shardList: number[],
-            totalShards: number,
-            token: string,
-            intents: GatewayIntentsString[]
+        const command = BridgeClusterEventCreateCluster.safeParse(message);
+        if(!command.success) {
+            return
         }
 
-        if (this.clusters.has(m.clusterID)) {
+        if (this.clusters.has(command.data.data.clusterID)) {
             this.eventManager?.send({
                 type: 'CLUSTER_STOPPED',
                 data: {
-                    id: m.clusterID,
+                    id: command.data.data.clusterID,
                     reason: 'Cluster already exists'
                 }
             }).catch(() => {
@@ -205,7 +206,7 @@ export class ManagedInstance extends BotInstance {
             return;
         }
 
-        this.startProcess(this.instanceID, m.clusterID, m.shardList, m.totalShards, m.token, m.intents);
+        this.startProcess(this.instanceID, command.data.data.clusterID, command.data.data.shardList, command.data.data.totalShards, command.data.data.token, command.data.data.intents as GatewayIntentsString[], command.data.data.url);
     }
 
     private onClusterStop(message: unknown) {

@@ -11,7 +11,7 @@ export enum BridgeClusterStatus {
 export class BridgeCluster {
     public readonly id: number;
     public readonly shards: BridgeClusterShard[];
-    private status: BridgeClusterStatus;
+    public status: BridgeClusterStatus;
     public instance?: BridgeInstance;
 
     constructor(id: number, shards: BridgeClusterShard[]) {

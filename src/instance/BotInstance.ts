@@ -2,6 +2,7 @@ import {fork} from 'child_process';
 import {ClusterProcess} from "./cluster/ClusterProcess";
 import {GatewayIntentsString} from "discord.js";
 import {ShardingUtil} from "../general/ShardingUtil";
+import {z} from "zod";
 
 export abstract class BotInstance {
 
@@ -40,7 +41,7 @@ export abstract class BotInstance {
         'SELF_CHECK_RECEIVED': undefined,
     }
 
-    protected startProcess(instanceID: number, clusterID: number, shardList: number[], totalShards: number, token: string, intents: GatewayIntentsString[]): void {
+    protected startProcess(instanceID: number, clusterID: number, shardList: number[], totalShards: number, token: string, intents: GatewayIntentsString[], url?: string): void {
         try {
             const childProcess = fork(this.entryPoint, {
                 env: {
@@ -50,8 +51,9 @@ export abstract class BotInstance {
                     TOTAL_SHARDS: totalShards.toString(),
                     TOKEN: token,
                     INTENTS: intents.join(','),
-                    FORCE_COLOR: 'true'
-                },
+                    FORCE_COLOR: 'true',
+                    URL: url
+                } as ClusterProcessEnv,
                 stdio: 'inherit',
                 execArgv: this.execArgv,
                 silent: false,
@@ -209,3 +211,16 @@ export type BotInstanceEventListeners = {
     'SELF_CHECK_ERROR': ((error: string) => void) | undefined,
     'SELF_CHECK_RECEIVED': ((data: { clusterList: number[] }) => void) | undefined,
 };
+
+export const ClusterProcessEnv = z.object({
+    INSTANCE_ID: z.string(),
+    CLUSTER_ID: z.string(),
+    SHARD_LIST: z.string(),
+    TOTAL_SHARDS: z.string(),
+    TOKEN: z.string(),
+    INTENTS: z.string(),
+    FORCE_COLOR: z.string(),
+    URL: z.string().optional()
+})
+
+export type ClusterProcessEnv = z.infer<typeof ClusterProcessEnv>
