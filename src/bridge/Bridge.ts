@@ -14,6 +14,7 @@ export class Bridge {
     private readonly shardsPerCluster: number = 1;
     private readonly clusterToStart: number = 1
     private readonly reclusteringTimeoutInMs: number;
+    private readonly ignoreHeartbeatMissed: boolean = false;
 
     private readonly clusterCalculator: ClusterCalculator;
 
@@ -30,13 +31,14 @@ export class Bridge {
         ERROR: undefined
     }
 
-    constructor(port: number, token: string, intents: GatewayIntentsString[], shardsPerCluster: number, clusterToStart: number, reclusteringTimeoutInMs: number) {
+    constructor(port: number, token: string, intents: GatewayIntentsString[], shardsPerCluster: number, clusterToStart: number, reclusteringTimeoutInMs: number, ignoreHeartbeatMissed?: boolean) {
         this.port = port;
         this.token = token;
         this.intents = intents;
         this.clusterToStart = clusterToStart;
         this.shardsPerCluster = shardsPerCluster;
         this.reclusteringTimeoutInMs = reclusteringTimeoutInMs;
+        this.ignoreHeartbeatMissed = ignoreHeartbeatMissed || false;
 
         this.clusterCalculator = new ClusterCalculator(this.clusterToStart, this.shardsPerCluster);
 
@@ -106,7 +108,7 @@ export class Bridge {
                     if (this.eventMap.CLUSTER_HEARTBEAT_FAILED) this.eventMap.CLUSTER_HEARTBEAT_FAILED(cluster, err)
                     cluster.addMissedHeartbeat()
 
-                    if (cluster.missedHeartbeats > 7 && !cluster.connection?.dev) {
+                    if (cluster.missedHeartbeats > 7 && !cluster.connection?.dev && !this.ignoreHeartbeatMissed) {
                         cluster.connection?.eventManager.send({
                             type: 'CLUSTER_STOP',
                             data: {
