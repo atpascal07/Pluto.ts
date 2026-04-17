@@ -1,6 +1,6 @@
 {
-  "name": "galactic.ts",
-  "version": "0.0.0",
+  "name": "pluto.ts",
+  "version": "0.0.3",
   "description": "galactic is a scalable clustering and sharding framework for Discord bots, enabling efficient multi-machine deployments with seamless discord.js integration.",
   "keywords": [
     "discord",
@@ -16,15 +16,14 @@
     "bot-hosting",
     "galactic"
   ],
-  "author": "GalaxyBot",
+  "author": "PlutoBot",
   "license": "MIT",
   "scripts": {
     "build": "tsdown",
     "test:cluster": "npm run build && npx tsx test/machine.ts",
     "test:bot": "npx tsx test/bot.ts",
     "test:bridge": "npm run build && npx tsx test/bridge.ts",
-    "test:sa": "npm run build && npx tsx test/sa.machine.ts",
-    "test:dashboard": "npx tsx test/dashboard.test.ts"
+    "test:sa": "npm run build && npx tsx test/sa.machine.ts"
   },
   "files": [
     "dist"
