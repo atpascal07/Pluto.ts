@@ -1,6 +1,6 @@
 ![Galactic Logo](https://s3.galaxybot.app/media/galactic/readmeBanner.png?v=2)
 
-`galactic.ts` is a scaling library for Discord bots. It helps you run shards and clusters across one or many machines with a central Bridge.
+`pluto.ts` is a scaling library for Discord bots. It helps you run shards and clusters across one or many machines with a central Bridge.
 
 ## Features
 
@@ -14,9 +14,9 @@
 ## Installation
 
 ```bash
-npm install galactic.ts
+npm install pluto.ts
 # or
-yarn add galactic.ts
+yarn add pluto.ts
 ```
 
 ## Quick Start
@@ -24,7 +24,7 @@ yarn add galactic.ts
 ### 1) Standalone instance (single machine)
 
 ```ts
-import { StandaloneInstance } from "galactic.ts";
+import { StandaloneInstance } from "pluto.ts";
 
 const instance = new StandaloneInstance(
   `${__dirname}/bot.js`,
@@ -40,7 +40,7 @@ instance.start();
 ### 2) Bot/Cluster file
 
 ```ts
-import { Cluster } from "galactic.ts";
+import { Cluster } from "pluto.ts";
 import { Client, ClientOptions } from "discord.js";
 
 export class ExtendedClient extends Client {
@@ -90,7 +90,7 @@ Typical setup:
 
 1. Start one **Bridge**
 2. Start multiple **instances** connected to that Bridge
-3. Let galactic distribute and rebalance clusters automatically
+3. Let pluto.ts distribute and rebalance clusters automatically
 
 ### Terminology
 
@@ -135,7 +135,7 @@ Example status response:
 ### Optional constructor override
 
 ```ts
-import { Bridge } from "galactic.ts";
+import { Bridge } from "pluto.ts";
 
 const bridge = new Bridge(
   3000,
@@ -158,7 +158,7 @@ Do not expose it publicly without authentication.
 
 ## Discord.js Compatibility
 
-`galactic.ts` is designed to work smoothly with modern `discord.js` setups.
+`pluto.ts` is designed to work smoothly with modern `discord.js` setups.
 
 ## Use Cases
 
