@@ -1,4 +1,4 @@
-![Galactic Logo](https://s3.galaxybot.app/media/galactic/readmeBanner.png?v=2)
+
 
 `pluto.ts` is a scaling library for Discord bots. It helps you run shards and clusters across one or many machines with a central Bridge.
 
