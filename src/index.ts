@@ -2,6 +2,7 @@ export * from './bridge/BridgeClusterConnection';
 export * from './bridge/BridgeInstanceConnection';
 export * from './bridge/Bridge';
 export * from './bridge/ClusterCalculator';
+export * from './bridge/BridgeDashboard';
 
 export * from './cluster/Cluster';
 export * from './cluster/ClusterProcess';

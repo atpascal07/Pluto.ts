@@ -131,7 +131,66 @@ Typical distributed setup:
 - **Shard**: Discord gateway connection for a portion of guilds
 - **Bridge**: Centralized coordinator for multi-instance deployments
 
-## Integration with Discord.js
+## Web Dashboard
+
+When the **Bridge** is started, galactic automatically launches a lightweight HTTP dashboard bound to `127.0.0.1` (localhost only).
+
+```
+[Dashboard] Web dashboard available at http://127.0.0.1:9100
+```
+
+### Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/` | Simple HTML status UI (auto-refreshes every 10 s) |
+| `GET` | `/api/status` | JSON status of the Bridge |
+
+#### Example `/api/status` response
+
+```json
+{
+  "running": true,
+  "uptime": 42,
+  "version": "2.1.5",
+  "instances": [],
+  "clusters": []
+}
+```
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DASHBOARD_PORT` | `9100` | TCP port the dashboard listens on |
+
+### Custom Options
+
+Pass a `DashboardOptions` object as the last argument to the `Bridge` constructor to override defaults programmatically:
+
+```ts
+import { Bridge } from "galactic.ts";
+
+const bridge = new Bridge(
+  3000,
+  process.env.BOT_TOKEN!,
+  ["Guilds"],
+  2,
+  2,
+  60_000,
+  false,
+  { port: 8080 },   // <-- dashboard options
+);
+
+bridge.start();
+```
+
+### Security Notice
+
+> ⚠️ The dashboard is intentionally bound to **`127.0.0.1` (localhost)** and is not accessible from outside the machine.  
+> Do **not** expose the dashboard port to the public internet without adding authentication, as it reveals operational data about your bot deployment.
+
+
 
 galactic is fully compatible with the latest version of discord.js.  
 You can integrate it without modifying your existing command or event handling structure.

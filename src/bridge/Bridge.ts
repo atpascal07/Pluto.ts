@@ -4,6 +4,7 @@ import {GatewayIntentsString, Snowflake} from "discord.js";
 import {ClusterCalculator} from "./ClusterCalculator";
 import {BridgeClusterConnection, BridgeClusterConnectionStatus, HeartbeatResponse} from "./BridgeClusterConnection";
 import {ShardingUtil} from "../general/ShardingUtil";
+import {BridgeDashboard, DashboardOptions} from "./BridgeDashboard";
 
 export class Bridge {
     public readonly port: number;
@@ -17,6 +18,8 @@ export class Bridge {
     private readonly ignoreHeartbeatMissed: boolean = false;
 
     private readonly clusterCalculator: ClusterCalculator;
+    private readonly dashboard: BridgeDashboard;
+    private readonly startedAt: number = Date.now();
 
     private readonly eventMap: BridgeEventListeners = {
         CLUSTER_READY: undefined,
@@ -31,7 +34,7 @@ export class Bridge {
         ERROR: undefined
     }
 
-    constructor(port: number, token: string, intents: GatewayIntentsString[], shardsPerCluster: number, clusterToStart: number, reclusteringTimeoutInMs: number, ignoreHeartbeatMissed?: boolean) {
+    constructor(port: number, token: string, intents: GatewayIntentsString[], shardsPerCluster: number, clusterToStart: number, reclusteringTimeoutInMs: number, ignoreHeartbeatMissed?: boolean, dashboardOptions?: DashboardOptions) {
         this.port = port;
         this.token = token;
         this.intents = intents;
@@ -41,6 +44,9 @@ export class Bridge {
         this.ignoreHeartbeatMissed = ignoreHeartbeatMissed || false;
 
         this.clusterCalculator = new ClusterCalculator(this.clusterToStart, this.shardsPerCluster);
+
+        this.dashboard = new BridgeDashboard(dashboardOptions);
+        this.dashboard.setStatusProvider(() => this.buildDashboardStatus());
 
         this.server = new Server({
             port: this.port,
@@ -52,6 +58,7 @@ export class Bridge {
             this.startListening();
         })
 
+        this.dashboard.start();
         this.interval();
     }
 
@@ -451,6 +458,38 @@ export class Bridge {
             guildID: guildID,
             data: data
         }, timeout);
+    }
+
+    private buildDashboardStatus() {
+        const clusters = this.clusterCalculator.clusterList.map(c => ({
+            clusterID: c.clusterID,
+            status: c.connectionStatus,
+            shards: c.shardList,
+            missedHeartbeats: c.missedHeartbeats,
+            readyAt: c.readyAt,
+        }));
+
+        const instances = this.connectedInstances.values().map(i => ({
+            id: i.instanceID,
+            status: i.connectionStatus,
+            dev: i.dev,
+            establishedAt: i.establishedAt,
+            clusters: this.clusterCalculator.getClusterForConnection(i).map(c => ({
+                clusterID: c.clusterID,
+                status: c.connectionStatus,
+                shards: c.shardList,
+                missedHeartbeats: c.missedHeartbeats,
+                readyAt: c.readyAt,
+            })),
+        })).toArray();
+
+        return {
+            running: true,
+            uptime: Math.floor((Date.now() - this.startedAt) / 1000),
+            version: '2.1.5',
+            instances,
+            clusters,
+        };
     }
 }
 
