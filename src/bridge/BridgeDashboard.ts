@@ -3,6 +3,7 @@ import { BridgeClusterConnectionStatus } from './BridgeClusterConnection';
 import { BridgeInstanceConnectionStatus } from './BridgeInstanceConnection';
 
 const PACKAGE_VERSION = '2.1.5';
+export { PACKAGE_VERSION };
 
 export interface DashboardOptions {
     /** TCP port to listen on. Defaults to `DASHBOARD_PORT` env var or 9100. */

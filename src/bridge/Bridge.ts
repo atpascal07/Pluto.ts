@@ -4,7 +4,7 @@ import {GatewayIntentsString, Snowflake} from "discord.js";
 import {ClusterCalculator} from "./ClusterCalculator";
 import {BridgeClusterConnection, BridgeClusterConnectionStatus, HeartbeatResponse} from "./BridgeClusterConnection";
 import {ShardingUtil} from "../general/ShardingUtil";
-import {BridgeDashboard, DashboardOptions} from "./BridgeDashboard";
+import {BridgeDashboard, DashboardOptions, PACKAGE_VERSION} from "./BridgeDashboard";
 
 export class Bridge {
     public readonly port: number;
@@ -56,9 +56,9 @@ export class Bridge {
     public start(): void {
         this.server.start().then(() => {
             this.startListening();
+            this.dashboard.start();
         })
 
-        this.dashboard.start();
         this.interval();
     }
 
@@ -469,7 +469,7 @@ export class Bridge {
             readyAt: c.readyAt,
         }));
 
-        const instances = this.connectedInstances.values().map(i => ({
+        const instances = Array.from(this.connectedInstances.values()).map(i => ({
             id: i.instanceID,
             status: i.connectionStatus,
             dev: i.dev,
@@ -481,12 +481,12 @@ export class Bridge {
                 missedHeartbeats: c.missedHeartbeats,
                 readyAt: c.readyAt,
             })),
-        })).toArray();
+        }));
 
         return {
             running: true,
             uptime: Math.floor((Date.now() - this.startedAt) / 1000),
-            version: '2.1.5',
+            version: PACKAGE_VERSION,
             instances,
             clusters,
         };
