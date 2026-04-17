@@ -1,6 +1,6 @@
 {
   "name": "pluto.ts",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "galactic is a scalable clustering and sharding framework for Discord bots, enabling efficient multi-machine deployments with seamless discord.js integration.",
   "keywords": [
     "discord",
