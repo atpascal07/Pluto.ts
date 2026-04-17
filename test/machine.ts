@@ -7,7 +7,7 @@ dotenv.config();
 const machine = new ManagedInstance(
   `${__dirname}/bot.ts`,
   "localhost",
-  3000,
+  Number(process.env.PORT) || 3000,
   1,
   {
     key: "value",

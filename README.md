@@ -130,7 +130,17 @@ Example status response:
 
 | Variable | Default | Description |
 |---|---|---|
+| `PORT` | `3000` | Bridge IPC server port (instances connect on this port) |
 | `DASHBOARD_PORT` | `9100` | Dashboard HTTP port |
+
+Set `PORT` in your `.env` file to change the port the Bridge listens on:
+
+```env
+PORT=4000
+DASHBOARD_PORT=9100
+```
+
+Both variables are read automatically at startup — no code change needed.
 
 ### Optional constructor override
 

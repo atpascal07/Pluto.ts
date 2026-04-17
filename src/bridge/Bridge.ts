@@ -34,8 +34,8 @@ export class Bridge {
         ERROR: undefined
     }
 
-    constructor(port: number, token: string, intents: GatewayIntentsString[], shardsPerCluster: number, clusterToStart: number, reclusteringTimeoutInMs: number, ignoreHeartbeatMissed?: boolean, dashboardOptions?: DashboardOptions) {
-        this.port = port;
+    constructor(port: number | undefined, token: string, intents: GatewayIntentsString[], shardsPerCluster: number, clusterToStart: number, reclusteringTimeoutInMs: number, ignoreHeartbeatMissed?: boolean, dashboardOptions?: DashboardOptions) {
+        this.port = port ?? parseInt(process.env.PORT ?? '3000', 10);
         this.token = token;
         this.intents = intents;
         this.clusterToStart = clusterToStart;

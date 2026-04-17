@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 
-const bridge = new Bridge(3000,
+const bridge = new Bridge(undefined,
     process.env.TEST_BOT_TOKEN!, [
         "Guilds"
     ],
