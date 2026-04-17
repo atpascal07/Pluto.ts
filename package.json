@@ -40,12 +40,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GalaxyBotTeam/galactic.ts"
+    "url": "git+https://github.com/atpascal07/Pluto.ts"
   },
   "bugs": {
-    "url": "https://github.com/GalaxyBotTeam/galactic.ts/issues"
+    "url": "https://github.com/atpascal07/Pluto.ts/issues"
   },
-  "homepage": "https://galaxybot.app",
+  "homepage": "https://plutobot.app",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.cts",
