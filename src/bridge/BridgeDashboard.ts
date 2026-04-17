@@ -1,9 +1,9 @@
 import * as http from 'http';
 import { BridgeClusterConnectionStatus } from './BridgeClusterConnection';
 import { BridgeInstanceConnectionStatus } from './BridgeInstanceConnection';
+import pkg from '../../package.json';
 
-const PACKAGE_VERSION = '2.1.5';
-export { PACKAGE_VERSION };
+export const PACKAGE_VERSION: string = pkg.version;
 
 export interface DashboardOptions {
     /** TCP port to listen on. Defaults to `DASHBOARD_PORT` env var or 9100. */

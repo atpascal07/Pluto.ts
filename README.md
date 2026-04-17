@@ -152,7 +152,7 @@ When the **Bridge** is started, galactic automatically launches a lightweight HT
 {
   "running": true,
   "uptime": 42,
-  "version": "2.1.5",
+  "version": "x.x.x",
   "instances": [],
   "clusters": []
 }
